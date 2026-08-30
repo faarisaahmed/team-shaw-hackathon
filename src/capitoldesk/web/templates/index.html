@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capitol Desk</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --plane:      #0d0d0d;
+    --surface:    #1a1a19;
+    --ink:        #ffffff;
+    --ink-2:      #c3c2b7;
+    --muted:      #898781;
+    --hairline:   #2c2c2a;
+    --border:     rgba(255,255,255,0.10);
+    --accent:     #3987e5;
+    --good:       #0ca30c;
+    --critical:   #d03b3b;
+    --warning:    #fab219;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --plane: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --muted: #898781; --hairline: #e1e0d9; --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6; --good: #006300;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--plane); color: var(--ink);
+    font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 22px 72px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  h1 { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--ink-2);
+  }
+  .badge.paper { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, transparent); }
+  .spacer { flex: 1; }
+  button {
+    font: inherit; font-weight: 550; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; cursor: pointer;
+  }
+  button:hover { border-color: color-mix(in oklab, var(--accent) 50%, transparent); }
+  button[disabled] { opacity: .5; cursor: default; }
+  button.arm { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 40%, transparent); }
+
+  .hero { margin: 26px 0 8px; }
+  .hero .label { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  .hero .value { font-size: 52px; font-weight: 650; letter-spacing: -0.025em; line-height: 1.05; margin-top: 4px; }
+  .hero .delta { font-size: 14px; font-weight: 550; margin-top: 6px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin: 22px 0 26px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; }
+  .tile .label { color: var(--muted); font-size: 11.5px; letter-spacing: .03em; }
+  .tile .value { font-size: 25px; font-weight: 600; margin-top: 3px; letter-spacing: -0.02em; }
+
+  section { margin-top: 30px; }
+  h2 { font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+       color: var(--muted); margin: 0 0 11px; }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 11.5px; font-weight: 550; color: var(--muted);
+       letter-spacing: .04em; padding: 0 10px 7px 0; border-bottom: 1px solid var(--hairline); }
+  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--hairline); font-size: 13px; }
+  td.num, th.num { text-align: right; padding-right: 14px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .pos { color: var(--good); } .neg { color: var(--critical); }
+
+  .bar { display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle; }
+  .barwrap { display: flex; align-items: center; gap: 8px; }
+  .track { flex: 1; display: flex; justify-content: center; min-width: 90px; }
+  .track .half { width: 50%; display: flex; }
+  .track .half.l { justify-content: flex-end; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+          padding: 14px 16px; margin-bottom: 9px; }
+  .card .top { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; }
+  .tick { font-weight: 650; font-size: 15px; letter-spacing: -0.01em; }
+  .who { color: var(--ink-2); font-size: 13px; }
+  .chip { font-size: 11px; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--border);
+          color: var(--muted); letter-spacing: .02em; }
+  .chip.mode { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, transparent); }
+  .chip.decayed { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 40%, transparent); }
+  .why { color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+  .empty { color: var(--muted); font-size: 13px; padding: 16px 0; }
+
+  .passed li { color: var(--ink-2); font-size: 12.5px; padding: 6px 0;
+               border-bottom: 1px solid var(--hairline); list-style: none; }
+  .passed ul { margin: 0; padding: 0; }
+  .passed .t { color: var(--ink); font-weight: 600; margin-right: 7px; }
+  footer { margin-top: 42px; color: var(--muted); font-size: 12px; }
+  a { color: var(--accent); }
+  .running { color: var(--warning); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Capitol Desk</h1>
+    {% if paper %}<span class="badge paper">Paper</span>{% endif %}
+    {% if account %}<span class="sub mono">{{ account.number }}</span>{% endif %}
+    <span class="spacer"></span>
+    <button id="scan">Scan filings</button>
+    <button id="scanlive" class="arm">Scan &amp; trade</button>
+    <button id="theme" title="Toggle theme">◐</button>
+  </header>
+  <div class="sub" id="status">
+    {% if job.running %}<span class="running">● cycle running…</span>
+    {% elif job.error %}<span class="neg">last cycle failed: {{ job.error }}</span>
+    {% else %}Mirrors public STOCK Act disclosures into options. Updated {{ now.strftime('%H:%M:%S') }}.{% endif %}
+  </div>
+
+  {% if account %}
+  <div class="hero">
+    <div class="label">Portfolio value</div>
+    <div class="value">${{ '{:,.2f}'.format(account.equity) }}</div>
+    <div class="delta {{ 'pos' if account.pl_today >= 0 else 'neg' }}">
+      {{ '▲' if account.pl_today >= 0 else '▼' }}
+      {{ '{:+,.2f}'.format(account.pl_today) }} today
+      <span class="sub">· ${{ '{:,.0f}'.format(account.buying_power) }} options buying power</span>
+    </div>
+  </div>
+  {% elif broker_error %}
+  <div class="empty">Broker unavailable: {{ broker_error }}</div>
+  {% endif %}
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Filings read</div><div class="value">{{ stats.filings }}</div></div>
+    <div class="tile"><div class="label">Transactions parsed</div><div class="value">{{ stats.transactions }}</div></div>
+    <div class="tile"><div class="label">Members tracked</div><div class="value">{{ stats.members }}</div></div>
+    <div class="tile"><div class="label">Trades placed</div><div class="value">{{ stats.trades }}</div></div>
+    <div class="tile"><div class="label">Capital deployed</div><div class="value">${{ '{:,.0f}'.format(stats.deployed) }}</div></div>
+    <div class="tile"><div class="label">Passed over</div><div class="value">{{ stats.passed }}</div></div>
+  </div>
+
+  <section>
+    <h2>Open positions</h2>
+    {% if positions %}
+    {% set maxabs = positions | map(attribute='pl') | map('abs') | max %}
+    <table>
+      <thead><tr>
+        <th>Contract</th><th class="num">Qty</th><th class="num">Avg cost</th>
+        <th class="num">Last</th><th class="num">Value</th><th class="num">Unrealised</th>
+        <th style="width:170px">P&amp;L</th>
+      </tr></thead>
+      <tbody>
+      {% for p in positions %}
+        <tr>
+          <td class="mono">{{ p.symbol }}</td>
+          <td class="num">{{ p.qty }}</td>
+          <td class="num">${{ '{:,.2f}'.format(p.avg) }}</td>
+          <td class="num">${{ '{:,.2f}'.format(p.current) }}</td>
+          <td class="num">${{ '{:,.2f}'.format(p.value) }}</td>
+          <td class="num {{ 'pos' if p.pl >= 0 else 'neg' }}">
+            {{ '{:+,.2f}'.format(p.pl) }} <span class="sub">({{ '{:+.1f}'.format(p.plpc) }}%)</span>
+          </td>
+          <td>
+            <div class="barwrap"><div class="track">
+              <div class="half l">{% if p.pl < 0 %}<span class="bar" style="background:var(--critical);width:{{ (p.pl|abs / maxabs * 100) if maxabs else 0 }}%"></span>{% endif %}</div>
+              <div class="half r">{% if p.pl >= 0 %}<span class="bar" style="background:var(--good);width:{{ (p.pl / maxabs * 100) if maxabs else 0 }}%"></span>{% endif %}</div>
+            </div></div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No open positions. Orders placed outside market hours fill at the next open.</div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Decisions</h2>
+    {% if trades %}
+      {% for t in trades %}
+      <div class="card">
+        <div class="top">
+          <span class="tick">{{ t.ticker }}</span>
+          <span class="chip mode">{{ t.mode }}</span>
+          <span class="who">mirroring {{ (t.member or '').replace('Hon. ','') }}</span>
+          {% if t.signal_decayed %}<span class="chip decayed">signal decayed</span>{% endif %}
+          <span class="spacer"></span>
+          <span class="chip">{{ t.contracts }} × ${{ '{:,.2f}'.format(t.limit_price) }}</span>
+          <span class="chip">${{ '{:,.0f}'.format(t.notional) }}</span>
+          <span class="chip">conviction {{ '{:.2f}'.format(t.conviction) }}</span>
+        </div>
+        <div class="mono sub" style="margin-bottom:6px">{{ t.contract_symbol }} · {{ t.status }}</div>
+        <div class="why">{{ t.rationale }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">Nothing traded yet. Run a scan.</div>
+    {% endif %}
+  </section>
+
+  <section class="passed">
+    <h2>Declined on the merits <span style="text-transform:none;letter-spacing:0;color:var(--muted)">— the strategist looked and said no</span></h2>
+    {% if judgment_passes %}
+      {% for r in judgment_passes %}
+      <div class="card">
+        <div class="top"><span class="tick">{{ r.ticker or '—' }}</span>
+          <span class="chip">passed</span></div>
+        <div class="why">{{ r.reason.replace('strategist skipped: ', '') }}</div>
+      </div>
+      {% endfor %}
+    {% else %}<div class="empty">No judgment passes recorded yet.</div>{% endif %}
+  </section>
+
+  <section>
+    <h2>Filtered before the strategist</h2>
+    {% if grouped_passes %}
+    <table>
+      <thead><tr><th>Reason</th><th class="num">Count</th><th>Names</th></tr></thead>
+      <tbody>
+      {% for g in grouped_passes %}
+        <tr>
+          <td>{{ g.label }}</td>
+          <td class="num">{{ g.count }}</td>
+          <td class="sub mono">{{ g.tickers | join(', ') if g.tickers else '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty">Nothing filtered yet.</div>{% endif %}
+  </section>
+
+  <section>
+    <h2>Filings read</h2>
+    {% if filings %}
+    <table>
+      <thead><tr><th>Filed</th><th>Member</th><th class="num">Transactions</th><th class="num">Doc ID</th></tr></thead>
+      <tbody>
+      {% for f in filings %}
+        <tr>
+          <td>{{ f.filing_date }}</td>
+          <td>{{ (f.member or '').replace('Hon. ','') }}</td>
+          <td class="num">{{ f.n_txns }}</td>
+          <td class="num mono">{{ f.doc_id }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty">No filings processed yet.</div>{% endif %}
+  </section>
+
+  <footer>
+    Data: U.S. House Clerk public financial disclosures (STOCK Act). Execution: Alpaca paper trading.
+    These are public filings — trading on them is not insider trading.
+  </footer>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  async function kick(live) {
+    $('#scan').disabled = $('#scanlive').disabled = true;
+    $('#status').innerHTML = '<span class="running">● cycle running…</span>';
+    try {
+      const r = await fetch('/scan?live=' + live + '&days=30', { method: 'POST' });
+      if (r.status === 409) $('#status').textContent = 'A cycle is already running.';
+    } catch (e) { $('#status').textContent = 'Failed to start: ' + e; }
+    poll();
+  }
+  $('#scan').onclick = () => kick(false);
+  $('#scanlive').onclick = () => {
+    if (confirm('Place real paper orders for anything that clears the risk gate?')) kick(true);
+  };
+  $('#theme').onclick = () => {
+    const el = document.documentElement;
+    el.dataset.theme = el.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', el.dataset.theme);
+  };
+  if (localStorage.getItem('theme')) document.documentElement.dataset.theme = localStorage.getItem('theme');
+
+  let timer = null;
+  async function poll() {
+    const s = await (await fetch('/api/state')).json();
+    if (s.job.running) { if (!timer) timer = setInterval(poll, 3000); }
+    else { clearInterval(timer); timer = null; location.reload(); }
+  }
+  {% if job.running %}poll();{% endif %}
+  setTimeout(() => { if (!timer) location.reload(); }, 60000);
+</script>
+</body>
+</html>

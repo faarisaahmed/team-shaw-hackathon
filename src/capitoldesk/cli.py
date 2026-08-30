@@ -88,6 +88,18 @@ def journal(limit: int = 25):
 
 
 @app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Bind address. Use 0.0.0.0 to expose."),
+    port: int = typer.Option(8000),
+    reload: bool = typer.Option(False, "--reload"),
+):
+    """Serve the web dashboard."""
+    import uvicorn
+
+    uvicorn.run("capitoldesk.web.app:app", host=host, port=port, reload=reload)
+
+
+@app.command()
 def loop(
     live: bool = typer.Option(False, "--live", help="Actually place paper orders."),
     interval: int = typer.Option(900, help="Seconds between scans."),

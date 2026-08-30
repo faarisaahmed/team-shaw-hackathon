@@ -86,7 +86,13 @@ desk run --days 14 --live       # arm it — places paper orders
 desk positions                  # open option positions and P&L
 desk journal                    # what it traded, and everything it passed over
 desk review                     # agent reviews the live book via MCP
+desk loop --live                # run unattended: watch for filings and act
+desk serve                      # web dashboard on http://127.0.0.1:8000
 ```
+
+`desk loop` is the unattended runner. It scans on an interval, holds filings
+found outside market hours rather than pricing them into a session it hasn't
+seen, and periodically hands the book to the review agent.
 
 Nothing trades without `--live`.
 
