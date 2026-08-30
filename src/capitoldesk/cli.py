@@ -130,6 +130,7 @@ def backfill(
 @app.command()
 def backtest(
     horizon: int = typer.Option(21, help="Horizon (trading days) for the per-member table."),
+    save: bool = typer.Option(True, help="Persist results for the dashboard."),
     verbose: bool = typer.Option(False, "-v"),
 ):
     """Event study: do disclosed purchases beat SPY after the filing goes public?"""
@@ -173,6 +174,11 @@ def backtest(
         "[dim]Entry is the FILING date, not the transaction date - the trade is "
         "private until filed, so entering earlier would be lookahead bias.[/]"
     )
+    if save:
+        from .research.backtest import save as save_results
+
+        p = save_results(s, rows)
+        console.print(f"[dim]saved to {p}[/]")
 
 
 @app.command()

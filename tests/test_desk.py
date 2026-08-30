@@ -375,3 +375,13 @@ class TestEventStudy:
         rows = [Bar(100), Bar(105), Bar(110)]
         assert EventStudy._forward_return(rows, 2) == pytest.approx(0.10)
         assert EventStudy._forward_return(rows, 5) is None
+
+    def test_non_equity_symbols_are_screened_out(self):
+        from capitoldesk.research.backtest import VALID_SYMBOL
+
+        # One malformed symbol used to fail a whole 100-symbol batch.
+        assert not VALID_SYMBOL.match("EFC$D")
+        assert not VALID_SYMBOL.match("BRK.B")
+        assert not VALID_SYMBOL.match("")
+        for good in ("SPY", "F", "GOOGL", "INTC"):
+            assert VALID_SYMBOL.match(good)

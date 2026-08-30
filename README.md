@@ -138,6 +138,11 @@ delta 1.00 with no theta and no vega. Synthesizing that with an at-the-money cal
 at 65% IV takes on decay and vol risk the filer never took. The strategist is
 given live greeks and told to prefer high-delta ITM calls, or skip.
 
+**The backtest measures stocks, not options.** Replaying option fills across
+historical chains means guessing spreads, liquidity and assignment on contracts
+we cannot re-quote. The output would look precise and be fiction. Measuring the
+underlying answers the question the desk actually rests on.
+
 **The agent is advisory, not executing.** `desk review` gets read-only MCP tools.
 It can tell you a position is wrong; it cannot close it.
 
@@ -148,14 +153,44 @@ It can tell you a position is wrong; it cannot close it.
   `/public_disc/ptr-pdfs/<YEAR>/<DocID>.pdf`. Republished daily.
 - Senate (`efdsearch.senate.gov`) is not yet wired up — see below.
 
+## Does the signal actually work?
+
+`desk backtest` runs an event study over the extracted corpus. Entry is the
+**filing** date, not the transaction date — a trade is private for up to 45 days
+(median lag in this sample: **31.5 days**), so entering on the transaction date
+is lookahead bias and the easiest way to manufacture a fake edge here. Returns
+are excess over SPY across the identical window.
+
+Over 143 filings and 826 disclosed purchases:
+
+| Horizon | n | Mean excess | Median excess | Hit rate |
+|---|---|---|---|---|
+| 5 trading days | 799 | +0.09% | −0.40% | 45.2% |
+| 21 trading days | 669 | +0.74% | −0.37% | 49.0% |
+| 63 trading days | 668 | +0.42% | +0.08% | 50.1% |
+
+**Read this honestly: copying Congress indiscriminately does not work.** Hit
+rates sit at 45–50% — a coin flip — and the median trade is flat to negative at
+every horizon. The positive *means* come from a small number of large winners,
+not from a broad edge.
+
+That result is the argument for the desk's design rather than against it. If the
+average disclosed purchase is noise, the value has to come from **selection** —
+which is why the strategist declines most of what it sees, weights conviction by
+how much of the move has already happened, and sizes by hard caps rather than
+enthusiasm. Per-filer numbers point the same way: Pelosi shows +19.7% mean excess
+at 21 days on a **28.6% hit rate** — a handful of concentrated winners, exactly
+the shape her deep-ITM LEAPS style would produce.
+
+Caveats worth stating out loud: the sample is 2025 H1 plus recent 2026 filings,
+not the full corpus; per-member cells are small (n=3–70); and this measures the
+underlying, not an options book — see the design note below.
+
 ## Not done yet
 
 - **Senate filings.** House only. The Senate EFD portal requires an interstitial
   terms-of-access acceptance and serves HTML rather than a bulk archive, so it
   needs a separate ingester.
-- **Backtesting.** There's no historical replay, so "does this actually make
-  money" is unanswered. The 2026 index has 368 PTRs; replaying them against
-  historical option chains is the obvious next step.
 - **Committee context.** Whether a filer sits on a committee overseeing the
   sector they bought is arguably the strongest feature available, and it isn't
   used.

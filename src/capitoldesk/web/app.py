@@ -133,9 +133,12 @@ def _snapshot() -> dict:
         err = str(e)
         log.warning("broker unavailable: %s", e)
 
+    from ..research.backtest import load as load_backtest
+
     trades = ledger.recent_trades(30)
     judgment, grouped = _group_rejections(ledger.recent_rejections(200))
     return {
+        "backtest": load_backtest(),
         "judgment_passes": judgment[:10],
         "grouped_passes": grouped,
         "stats": st,

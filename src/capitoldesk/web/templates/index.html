@@ -231,6 +231,37 @@
     {% else %}<div class="empty">Nothing filtered yet.</div>{% endif %}
   </section>
 
+  {% if backtest %}
+  <section>
+    <h2>Does the signal work? <span style="text-transform:none;letter-spacing:0;color:var(--muted)">— excess return over SPY, measured from the filing date</span></h2>
+    <table>
+      <thead><tr>
+        <th>Horizon</th><th class="num">Events</th><th class="num">Mean stock</th>
+        <th class="num">Mean SPY</th><th class="num">Mean excess</th><th class="num">Hit rate</th>
+      </tr></thead>
+      <tbody>
+      {% for r in backtest.summary.horizons %}
+        <tr>
+          <td>{{ r.horizon }} trading days</td>
+          <td class="num">{{ r.n }}</td>
+          <td class="num">{{ '{:+.2f}'.format(r.mean_stock * 100) }}%</td>
+          <td class="num">{{ '{:+.2f}'.format(r.mean_bench * 100) }}%</td>
+          <td class="num {{ 'pos' if r.mean_excess > 0 else 'neg' }}">
+            {{ '{:+.2f}'.format(r.mean_excess * 100) }}%
+          </td>
+          <td class="num">{{ '{:.1f}'.format(r.hit_rate * 100) }}%</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sub" style="margin-top:9px">
+      Entry is the <strong>filing</strong> date, not the transaction date — a trade is private
+      for up to 45 days, so entering earlier would be lookahead bias. Generated
+      {{ backtest.generated_at[:16].replace('T', ' ') }}.
+    </div>
+  </section>
+  {% endif %}
+
   <section>
     <h2>Filings read</h2>
     {% if filings %}
