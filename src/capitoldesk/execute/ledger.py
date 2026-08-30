@@ -49,11 +49,25 @@ CREATE TABLE IF NOT EXISTS rejections (
 """
 
 
+# Columns added after the first version shipped. sqlite has no "ADD COLUMN IF
+# NOT EXISTS", so we check the table description and add what is missing.
+_MIGRATIONS = [
+    ("trades", "filled_qty", "INTEGER"),
+    ("trades", "filled_price", "REAL"),
+    ("trades", "filled_at", "TEXT"),
+    ("trades", "last_synced", "TEXT"),
+]
+
+
 def _conn() -> sqlite3.Connection:
     DATA.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(DB)
     c.row_factory = sqlite3.Row
     c.executescript(SCHEMA)
+    for table, col, typ in _MIGRATIONS:
+        cols = {r["name"] for r in c.execute(f"PRAGMA table_info({table})")}
+        if col not in cols:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
     return c
 
 
@@ -173,4 +187,35 @@ def seen_filings(limit: int = 40) -> list[dict]:
     with _conn() as c:
         return [dict(r) for r in c.execute(
             "SELECT * FROM seen ORDER BY filing_date DESC, seen_at DESC LIMIT ?", (limit,)
+        )]
+
+
+def update_order_state(
+    trade_id: int,
+    status: str,
+    *,
+    filled_qty: int | None = None,
+    filled_price: float | None = None,
+    filled_at: str | None = None,
+) -> None:
+    import datetime as _dt
+
+    with _conn() as c:
+        c.execute(
+            """UPDATE trades
+               SET status=?, filled_qty=COALESCE(?, filled_qty),
+                   filled_price=COALESCE(?, filled_price),
+                   filled_at=COALESCE(?, filled_at), last_synced=?
+               WHERE id=?""",
+            (status, filled_qty, filled_price, filled_at,
+             _dt.datetime.now().isoformat(), trade_id),
+        )
+
+
+def live_orders() -> list[dict]:
+    """Trades whose broker state may still change."""
+    with _conn() as c:
+        return [dict(r) for r in c.execute(
+            "SELECT * FROM trades WHERE order_id IS NOT NULL "
+            "AND status IN ('placed','accepted','new','partially_filled')"
         )]

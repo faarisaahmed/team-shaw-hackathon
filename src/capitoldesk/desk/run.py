@@ -145,6 +145,14 @@ class Desk:
             )
         )
 
+        # Reconcile first: decisions and risk checks should see what actually
+        # happened at the broker, not what we optimistically recorded.
+        from ..execute import reconcile
+
+        synced = reconcile.sync(self.broker)
+        if synced:
+            console.print(f"[dim]order states:[/] " + ", ".join(f"{k} {v}" for k, v in synced.items()))
+
         refs = self.scan(max_age_days=max_age_days)
         if limit:
             refs = refs[:limit]

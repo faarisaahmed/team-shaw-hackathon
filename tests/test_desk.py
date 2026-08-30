@@ -272,3 +272,106 @@ class TestSpreads:
         st, lc, lq, short = self._parts(80.0, 60.0)
         res = self._run(st, lc, lq, short)
         assert isinstance(res, Plan) and res.structure == "debit spread"
+
+
+class TestReconcile:
+    """The journal must reflect the broker, not our optimism."""
+
+    def test_terminal_states_cover_the_real_ones(self):
+        from capitoldesk.execute.reconcile import TERMINAL
+
+        for s in ("filled", "canceled", "expired", "rejected"):
+            assert s in TERMINAL
+
+    def test_sync_writes_fill_details(self, tmp_path, monkeypatch):
+        import capitoldesk.execute.ledger as L
+        from capitoldesk.execute import reconcile
+
+        monkeypatch.setattr(L, "DB", tmp_path / "t.sqlite3")
+        monkeypatch.setattr(L, "DATA", tmp_path)
+
+        from capitoldesk.strategy.plan import Mode, Plan
+
+        plan = Plan(
+            doc_id="1", member="Hon. Jane Doe", ticker="X", mode=Mode.REPLICATE,
+            contract_symbol="X260101C00100000", right="call", strike=100.0,
+            expiration=dt.date(2026, 12, 18), contracts=2, limit_price=5.0,
+            est_notional=1000.0, conviction=0.5, rationale="t",
+            txn_date=dt.date(2026, 7, 1), filing_date=dt.date(2026, 8, 1),
+            disclosed_min=1001, disclosed_max=15000,
+        )
+        L.record_trade(plan, "order-1", "placed")
+
+        class Order:
+            status = "filled"
+            filled_qty = "2"
+            filled_avg_price = "5.10"
+            filled_at = None
+
+        class FakeBroker:
+            class trading:
+                @staticmethod
+                def get_order_by_id(oid): return Order()
+
+        counts = reconcile.sync(FakeBroker())
+        assert counts == {"filled": 1}
+        row = L.recent_trades(1)[0]
+        assert row["status"] == "filled"
+        assert row["filled_qty"] == 2
+        assert row["filled_price"] == pytest.approx(5.10)
+
+    def test_broker_error_does_not_stop_the_sweep(self, tmp_path, monkeypatch):
+        import capitoldesk.execute.ledger as L
+        from capitoldesk.execute import reconcile
+
+        monkeypatch.setattr(L, "DB", tmp_path / "t2.sqlite3")
+        monkeypatch.setattr(L, "DATA", tmp_path)
+
+        class FakeBroker:
+            class trading:
+                @staticmethod
+                def get_order_by_id(oid): raise RuntimeError("boom")
+
+        assert reconcile.sync(FakeBroker()) == {}
+
+
+class TestEventStudy:
+    """Entering on the transaction date instead of the filing date is lookahead."""
+
+    def test_events_use_filing_date_and_record_lag(self):
+        from capitoldesk.extract.models import Disclosure, Transaction, TxnType
+        from capitoldesk.research.backtest import build_events
+
+        d = Disclosure(
+            doc_id="1", member_name="Hon. Jane Doe", filing_date=dt.date(2026, 8, 21),
+            transactions=[Transaction(
+                asset_name="X", ticker="X", txn_type=TxnType.PURCHASE,
+                txn_date=dt.date(2026, 7, 24), amount_min=1001, amount_max=15000,
+            )],
+        )
+        ev = build_events([d])[0]
+        assert ev.filing_date == dt.date(2026, 8, 21)
+        assert ev.lag_days == 28
+
+    def test_sales_are_not_events(self):
+        from capitoldesk.extract.models import Disclosure, Transaction, TxnType
+        from capitoldesk.research.backtest import build_events
+
+        d = Disclosure(
+            doc_id="1", member_name="Hon. Jane Doe", filing_date=dt.date(2026, 8, 21),
+            transactions=[Transaction(
+                asset_name="X", ticker="X", txn_type=TxnType.SALE,
+                txn_date=dt.date(2026, 7, 24), amount_min=1001, amount_max=15000,
+            )],
+        )
+        assert build_events([d]) == []
+
+    def test_forward_return(self):
+        from capitoldesk.research.backtest import EventStudy
+
+        class Bar:
+            def __init__(self, c): self.close = c
+
+        rows = [Bar(100), Bar(105), Bar(110)]
+        assert EventStudy._forward_return(rows, 2) == pytest.approx(0.10)
+        assert EventStudy._forward_return(rows, 5) is None
