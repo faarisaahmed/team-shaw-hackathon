@@ -88,6 +88,31 @@ def journal(limit: int = 25):
 
 
 @app.command()
+def loop(
+    live: bool = typer.Option(False, "--live", help="Actually place paper orders."),
+    interval: int = typer.Option(900, help="Seconds between scans."),
+    days: int = typer.Option(30, help="Only consider filings this recent."),
+    review_every: int = typer.Option(4 * 3600, help="Seconds between agent reviews (0 to disable)."),
+    trade_when_closed: bool = typer.Option(
+        False, "--trade-when-closed", help="Submit orders even outside market hours."
+    ),
+    max_cycles: int = typer.Option(None, help="Stop after N cycles (for testing)."),
+    verbose: bool = typer.Option(False, "-v"),
+):
+    """Run unattended: watch for new filings and act on them."""
+    _log(verbose)
+    from .desk.loop import DeskLoop
+
+    DeskLoop(
+        live=live,
+        interval=interval,
+        days=days,
+        review_every=review_every,
+        trade_only_when_open=not trade_when_closed,
+    ).run(max_cycles=max_cycles)
+
+
+@app.command()
 def review(verbose: bool = typer.Option(False, "-v")):
     """Have the agent review the open book via Alpaca's MCP server."""
     _log(verbose)
