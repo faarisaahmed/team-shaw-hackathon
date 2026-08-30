@@ -98,6 +98,9 @@ def record_trade(plan: Plan, order_id: str | None, status: str) -> None:
 
 
 def record_rejection(doc_id: str, ticker: str | None, reason: str) -> None:
+    from ..strategy.engine import clean_prose
+
+    reason = clean_prose(reason)
     with _conn() as c:
         c.execute(
             "INSERT INTO rejections (doc_id,ticker,reason,at) VALUES (?,?,?,?)",
@@ -145,3 +148,29 @@ def open_trades_for_ticker(ticker: str) -> list[dict]:
 def mark_closed(trade_id: int, note: str) -> None:
     with _conn() as c:
         c.execute("UPDATE trades SET status=? WHERE id=?", (f"closed: {note}"[:60], trade_id))
+
+
+def stats() -> dict:
+    """Headline counters for the dashboard."""
+    with _conn() as c:
+        seen = c.execute("SELECT COUNT(*) n, COALESCE(SUM(n_txns),0) t FROM seen").fetchone()
+        placed = c.execute(
+            "SELECT COUNT(*) n, COALESCE(SUM(notional),0) v FROM trades WHERE status='placed'"
+        ).fetchone()
+        rej = c.execute("SELECT COUNT(*) n FROM rejections").fetchone()
+        members = c.execute("SELECT COUNT(DISTINCT member) n FROM seen").fetchone()
+    return {
+        "filings": seen["n"],
+        "transactions": seen["t"],
+        "members": members["n"],
+        "trades": placed["n"],
+        "deployed": float(placed["v"]),
+        "passed": rej["n"],
+    }
+
+
+def seen_filings(limit: int = 40) -> list[dict]:
+    with _conn() as c:
+        return [dict(r) for r in c.execute(
+            "SELECT * FROM seen ORDER BY filing_date DESC, seen_at DESC LIMIT ?", (limit,)
+        )]

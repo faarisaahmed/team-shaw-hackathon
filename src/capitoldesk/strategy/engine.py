@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 
 import anthropic
 
@@ -28,11 +29,18 @@ MAX_CANDIDATES = 16
 # which surfaces as a literal "\ndash" in the prose. Normalise it rather than
 # shipping broken text into the journal and the demo console.
 _PROSE_FIXES = {"\ndash": " - ", "\nmdash": " - ", "&mdash;": " - ", "\u2014": " - "}
+# An unpaired double quote wedged between two lowercase words is a mangled dash,
+# not quotation: 'family trust "a routine allocation'.
+_STRAY_QUOTE = re.compile(r'(?<=[a-z,\)]) "(?=[a-z])')
 
 
 def clean_prose(text: str) -> str:
+    if not text:
+        return text
     for bad, good in _PROSE_FIXES.items():
         text = text.replace(bad, good)
+    if text.count('"') % 2 == 1:
+        text = _STRAY_QUOTE.sub(" - ", text)
     return " ".join(text.split())
 
 SYSTEM = """\
