@@ -121,3 +121,89 @@ class TestRiskLimits:
         assert r.max_notional_per_trade < r.max_notional_per_day
         assert r.min_open_interest > 0
         assert 0 < r.max_pct_of_open_interest < 1
+
+
+class TestTickerResolution:
+    """A proposed ticker must be confirmed by the broker before it can trade."""
+
+    def test_unverifiable_ticker_is_dropped(self, monkeypatch):
+        from capitoldesk.extract import resolve
+        from capitoldesk.extract.models import Disclosure, Transaction, TxnType
+
+        class FakeTrading:
+            def get_asset(self, sym):
+                raise ValueError("unknown symbol")
+
+        class FakeBroker:
+            trading = FakeTrading()
+
+        class FakeStream:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def get_final_message(self):
+                class M:
+                    parsed_output = resolve.Mappings(
+                        mappings=[resolve.Mapping(asset_name="Nonesuch Corp", ticker="ZZZZ")]
+                    )
+                return M()
+
+        class FakeClient:
+            class messages:
+                @staticmethod
+                def stream(**kw): return FakeStream()
+
+        disc = Disclosure(
+            doc_id="1", member_name="Hon. Jane Doe", filing_date=dt.date(2026, 8, 1),
+            transactions=[Transaction(
+                asset_name="Nonesuch Corp", txn_type=TxnType.PURCHASE,
+                txn_date=dt.date(2026, 7, 1), amount_min=1001, amount_max=15000,
+            )],
+        )
+        out = resolve.resolve_tickers(disc, broker=FakeBroker(), client=FakeClient())
+        assert out.transactions[0].ticker is None
+
+    def test_untradable_asset_is_dropped(self):
+        from capitoldesk.extract import resolve
+        from capitoldesk.extract.models import Disclosure, Transaction, TxnType
+
+        class Asset:
+            tradable = False
+
+        class FakeBroker:
+            class trading:
+                @staticmethod
+                def get_asset(sym): return Asset()
+
+        class FakeStream:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def get_final_message(self):
+                class M:
+                    parsed_output = resolve.Mappings(
+                        mappings=[resolve.Mapping(asset_name="Delisted Co", ticker="DEAD")]
+                    )
+                return M()
+
+        class FakeClient:
+            class messages:
+                @staticmethod
+                def stream(**kw): return FakeStream()
+
+        disc = Disclosure(
+            doc_id="1", member_name="Hon. Jane Doe", filing_date=dt.date(2026, 8, 1),
+            transactions=[Transaction(
+                asset_name="Delisted Co", txn_type=TxnType.PURCHASE,
+                txn_date=dt.date(2026, 7, 1), amount_min=1001, amount_max=15000,
+            )],
+        )
+        out = resolve.resolve_tickers(disc, broker=FakeBroker(), client=FakeClient())
+        assert out.transactions[0].ticker is None
+
+
+class TestLoopState:
+    def test_summary_is_readable(self):
+        from capitoldesk.desk.loop import LoopState
+
+        s = LoopState(cycles=3, filings_seen=12, orders_placed=2)
+        out = s.summary()
+        assert "cycles 3" in out and "filings 12" in out and "orders 2" in out

@@ -31,6 +31,8 @@ log = logging.getLogger(__name__)
 
 # Below this many characters we assume there is no usable text layer.
 MIN_TEXT_CHARS = 200
+# Generous: the largest 2026 filing needs well over 16k output tokens.
+MAX_OUTPUT_TOKENS = 64000
 
 SYSTEM = """\
 You extract transactions from U.S. House Periodic Transaction Reports (PTRs), \
@@ -76,6 +78,8 @@ def extract(
     *,
     client: anthropic.Anthropic | None = None,
     use_cache: bool = True,
+    resolve: bool = True,
+    broker=None,
 ) -> Disclosure:
     """Extract one filing. Results are cached - filings never change once posted."""
     cache = _cache_path(ref)
@@ -109,13 +113,24 @@ def extract(
         path = "vision"
 
     log.info("extracting %s (%s) via %s", ref.doc_id, ref.last, path)
-    resp = client.messages.parse(
+    # Streamed, with a large ceiling. Some members file enormous PTRs - one
+    # 18-page scanned filing in the 2026 set holds well over a hundred rows and
+    # silently truncated at 16k output tokens, which surfaced only as a JSON
+    # parse error. Streaming also keeps the request under the HTTP timeout.
+    with client.messages.stream(
         model=SETTINGS.extract_model,
-        max_tokens=16000,
+        max_tokens=MAX_OUTPUT_TOKENS,
         system=SYSTEM,
         messages=[{"role": "user", "content": content}],
         output_format=ExtractionResult,
-    )
+    ) as stream:
+        resp = stream.get_final_message()
+
+    if resp.stop_reason == "max_tokens":
+        raise RuntimeError(
+            f"extraction of {ref.doc_id} hit the {MAX_OUTPUT_TOKENS}-token output cap; "
+            "the filing is larger than the ceiling and would be silently truncated"
+        )
     result: ExtractionResult = resp.parsed_output
 
     disc = Disclosure(
@@ -125,18 +140,40 @@ def extract(
         filing_date=ref.filing_date,
         transactions=result.transactions,
     )
+
+    # Scanned filings name assets but never print tickers, so without this the
+    # whole paper corpus is untradable. Proposals are verified against Alpaca.
+    if resolve and any(not t.ticker and t.asset_name for t in disc.transactions):
+        from .resolve import resolve_tickers
+
+        try:
+            disc = resolve_tickers(disc, broker=broker, client=client)
+        except Exception as e:  # noqa: BLE001 - resolution is best-effort
+            log.warning("ticker resolution failed for %s: %s", ref.doc_id, e)
+
     cache.write_text(disc.model_dump_json(indent=2))
     return disc
 
 
 def extract_many(
-    refs: list[FilingRef], *, workers: int = 8, use_cache: bool = True
+    refs: list[FilingRef], *, workers: int = 8, use_cache: bool = True, resolve: bool = True
 ) -> list[Disclosure]:
     """Extract a batch concurrently. One failure never sinks the run."""
     client = anthropic.Anthropic(api_key=SETTINGS.anthropic_key)
+    broker = None
+    if resolve:
+        from ..execute.broker import Broker
+
+        broker = Broker()  # shared: asset lookups are read-only and thread-safe
+
     out: list[Disclosure] = []
     with cf.ThreadPoolExecutor(workers) as ex:
-        futs = {ex.submit(extract, r, client=client, use_cache=use_cache): r for r in refs}
+        futs = {
+            ex.submit(
+                extract, r, client=client, use_cache=use_cache, resolve=resolve, broker=broker
+            ): r
+            for r in refs
+        }
         for fut in cf.as_completed(futs):
             ref = futs[fut]
             try:

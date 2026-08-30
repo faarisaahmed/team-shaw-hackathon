@@ -66,6 +66,13 @@ class Transaction(BaseModel):
     option_detail: OptionDetail | None = Field(
         None, description="Only if an explicit option contract is described"
     )
+    ticker_inferred: bool = Field(
+        False,
+        description=(
+            "Set by the resolver, not by extraction. True when the ticker was "
+            "derived from the asset name rather than printed on the filing."
+        ),
+    )
 
     @property
     def amount_mid(self) -> float:
