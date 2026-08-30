@@ -71,8 +71,9 @@ OTM with high IV and heavy time value, that is a good reason to skip rather than
 a reason to settle.
 4. Liquidity is a hard practical constraint. Prefer higher open interest and \
 tighter spreads. A great thesis in an untradable contract is worth nothing.
-5. A disclosed SALE is a much weaker signal than a purchase. Members sell to rebalance, to satisfy ethics guidance, for tax reasons, or because a blind trust churned - none of which is a bearish view. Only express a sale as long puts when the filing looks genuinely informative (a large, concentrated, decisive exit), and skip otherwise.
-6. Conviction should reflect: size of the disclosed trade, freshness, how much \
+5. You are given a hard budget for this trade. An outright contract costs its mid price x 100. When the outright you actually want costs more than the budget - common on high-priced underlyings and deep-ITM LEAPS - you may build a VERTICAL DEBIT SPREAD instead: name the long contract in contract_symbol and a HIGHER-strike contract with the SAME expiration in short_leg_symbol. The net debit is (long mid - short mid) x 100 per spread, which is also the maximum loss. This buys the directional exposure at a fraction of the cost, at the price of capping the upside at the short strike. Prefer a spread that keeps the short strike far enough out that the filer's likely thesis still pays. If neither an outright nor a sensible spread fits the budget, skip.
+6. A disclosed SALE is a much weaker signal than a purchase. Members sell to rebalance, to satisfy ethics guidance, for tax reasons, or because a blind trust churned - none of which is a bearish view. Only express a sale as long puts when the filing looks genuinely informative (a large, concentrated, decisive exit), and skip otherwise.
+7. Conviction should reflect: size of the disclosed trade, freshness, how much \
 move is left, and liquidity. Be honest and use the full 0-1 range. Most trades \
 should not be 1.0.
 
@@ -203,10 +204,15 @@ MARKET NOW
   {txn.ticker} spot now                 : ${spot:,.2f}
   Move since transaction                : {move}
 
+BUDGET
+  Maximum for this trade: ${SETTINGS.risk.max_notional_per_trade:,.0f}
+  (an outright contract costs its mid x 100; a spread costs the net debit x 100)
+
 TRADABLE CANDIDATES (live quotes, per-contract prices; multiply by 100 for cost)
 {_fmt_candidates(cands, spot)}
 
-Choose one contract_symbol from the list above, or skip."""
+Choose contract_symbol from the list above - optionally with short_leg_symbol \
+to make it a spread - or skip."""
 
         resp = self.client.messages.parse(
             model=SETTINGS.model,
@@ -234,7 +240,27 @@ Choose one contract_symbol from the list above, or skip."""
             )
 
         contract, quote = chosen
-        return self._size(disc, txn, contract, quote, d, spot, at_txn)
+
+        short = None
+        if d.short_leg_symbol:
+            short = next((p for p in cands if p[0].symbol == d.short_leg_symbol), None)
+            if short is None:
+                return Rejection(
+                    doc_id=disc.doc_id, ticker=txn.ticker,
+                    reason=f"strategist returned off-list short leg {d.short_leg_symbol!r}",
+                )
+            if short[0].expiration != contract.expiration:
+                return Rejection(
+                    doc_id=disc.doc_id, ticker=txn.ticker,
+                    reason="spread legs must share an expiration",
+                )
+            if short[0].strike <= contract.strike:
+                return Rejection(
+                    doc_id=disc.doc_id, ticker=txn.ticker,
+                    reason="short leg must be a higher strike than the long leg",
+                )
+
+        return self._size(disc, txn, contract, quote, d, spot, at_txn, short=short)
 
     # ---------- sizing (pure code, hard-bounded) ----------
 
@@ -247,10 +273,26 @@ Choose one contract_symbol from the list above, or skip."""
         d: Decision,
         spot: float,
         at_txn: float | None,
+        short: tuple[Contract, Quote] | None = None,
     ) -> Plan | Rejection:
         r = SETTINGS.risk
-        # Pay up to the ask to get filled, but never above it.
-        limit = round(quote.mid + (quote.ask - quote.mid) * 0.6, 2) or quote.ask
+        if short is None:
+            # Pay up to the ask to get filled, but never above it.
+            limit = round(quote.mid + (quote.ask - quote.mid) * 0.6, 2) or quote.ask
+            open_interest = contract.open_interest
+        else:
+            # Net debit: buy the long leg, collect the short. Max loss is this debit.
+            short_contract, short_quote = short
+            net = quote.mid - short_quote.mid
+            if net <= 0:
+                return Rejection(
+                    doc_id=disc.doc_id, ticker=txn.ticker,
+                    reason="proposed spread is not a debit (short leg richer than long)",
+                )
+            # Cross a little to get filled on a two-legged order.
+            limit = round(net * 1.05, 2)
+            open_interest = min(contract.open_interest, short_contract.open_interest)
+
         per_contract = limit * 100
         if per_contract <= 0:
             return Rejection(doc_id=disc.doc_id, ticker=txn.ticker, reason="no valid price")
@@ -258,15 +300,16 @@ Choose one contract_symbol from the list above, or skip."""
         budget = r.max_notional_per_trade * d.conviction
         qty = int(budget // per_contract)
         qty = min(qty, r.max_contracts_per_order)
-        # Never take a meaningful share of a contract's open interest.
-        qty = min(qty, max(1, int(contract.open_interest * r.max_pct_of_open_interest)))
+        # Never take a meaningful share of a contract's open interest. For a
+        # spread, the thinner leg governs.
+        qty = min(qty, max(1, int(open_interest * r.max_pct_of_open_interest)))
 
         if qty < 1:
             return Rejection(
                 doc_id=disc.doc_id, ticker=txn.ticker,
                 reason=(
-                    f"contract too expensive for the risk budget: "
-                    f"${per_contract:,.0f}/contract vs ${budget:,.0f} allotted "
+                    f"{'spread' if short else 'contract'} too expensive for the risk budget: "
+                    f"${per_contract:,.0f} each vs ${budget:,.0f} allotted "
                     f"(conviction {d.conviction:.2f})"
                 ),
             )
@@ -277,6 +320,7 @@ Choose one contract_symbol from the list above, or skip."""
             ticker=txn.ticker,
             mode=d.action,
             contract_symbol=contract.symbol,
+            short_leg_symbol=short[0].symbol if short else None,
             right=contract.right,
             strike=contract.strike,
             expiration=contract.expiration,

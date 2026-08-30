@@ -207,3 +207,68 @@ class TestLoopState:
         s = LoopState(cycles=3, filings_seen=12, orders_placed=2)
         out = s.summary()
         assert "cycles 3" in out and "filings 12" in out and "orders 2" in out
+
+
+class TestSpreads:
+    """A debit spread's max loss is the net debit - that is what gets sized."""
+
+    def _parts(self, long_mid: float, short_mid: float, *, short_strike: float = 120.0,
+               short_exp: dt.date = dt.date(2026, 12, 18)):
+        from capitoldesk.strategy import engine
+
+        st = engine.Strategist.__new__(engine.Strategist)
+        long_c = Contract("L", "X", "call", 100.0, dt.date(2026, 12, 18), 5000, long_mid)
+        long_q = Quote("L", long_mid * 0.99, long_mid * 1.01)
+        short_c = Contract("S", "X", "call", short_strike, short_exp, 5000, short_mid)
+        short_q = Quote("S", short_mid * 0.99, short_mid * 1.01)
+        return st, long_c, long_q, (short_c, short_q)
+
+    def _run(self, st, lc, lq, short, conviction=1.0):
+        from capitoldesk.extract.models import Disclosure, Transaction, TxnType
+        from capitoldesk.strategy.plan import Decision, Mode
+
+        txn = Transaction(
+            asset_name="X Corp", ticker="X", txn_type=TxnType.PURCHASE,
+            txn_date=dt.date(2026, 7, 1), amount_min=1001, amount_max=15000,
+        )
+        disc = Disclosure(doc_id="1", member_name="Hon. Jane Doe", filing_date=dt.date(2026, 8, 1))
+        d = Decision(action=Mode.REPLICATE, contract_symbol="L", short_leg_symbol="S",
+                     conviction=conviction, rationale="test")
+        return st._size(disc, txn, lc, lq, d, 105.0, 100.0, short=short)
+
+    def test_spread_sizes_on_net_debit_not_long_premium(self):
+        from capitoldesk.strategy.plan import Plan
+
+        # Outright would be $8,000/contract - far over the $5,000 cap.
+        # Net debit is $80 - $60 = $20 -> ~$2,100 with the crossing buffer.
+        st, lc, lq, short = self._parts(80.0, 60.0)
+        res = self._run(st, lc, lq, short)
+        assert isinstance(res, Plan), res
+        assert res.is_spread and res.short_leg_symbol == "S"
+        assert res.est_notional <= SETTINGS.risk.max_notional_per_trade
+        assert res.limit_price == pytest.approx(21.0)
+
+    def test_credit_spread_is_rejected(self):
+        from capitoldesk.strategy.plan import Rejection
+
+        # Short leg richer than the long - that is a credit, not a debit.
+        st, lc, lq, short = self._parts(60.0, 80.0)
+        res = self._run(st, lc, lq, short)
+        assert isinstance(res, Rejection)
+        assert "not a debit" in res.reason
+
+    def test_thinner_leg_governs_open_interest_cap(self):
+        from capitoldesk.strategy.plan import Plan
+
+        st, lc, lq, short = self._parts(5.0, 3.0)
+        thin = Contract("S", "X", "call", 120.0, dt.date(2026, 12, 18), 40, 3.0)
+        res = self._run(st, lc, lq, (thin, short[1]))
+        assert isinstance(res, Plan)
+        assert res.contracts <= 2  # 5% of 40
+
+    def test_structure_label(self):
+        from capitoldesk.strategy.plan import Plan
+
+        st, lc, lq, short = self._parts(80.0, 60.0)
+        res = self._run(st, lc, lq, short)
+        assert isinstance(res, Plan) and res.structure == "debit spread"

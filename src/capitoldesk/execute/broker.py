@@ -249,3 +249,41 @@ class Broker:
     def close_option_position(self, symbol: str):
         """Liquidate a held option position at market."""
         return self.trading.close_position(symbol)
+
+    def buy_debit_spread(
+        self,
+        long_symbol: str,
+        short_symbol: str,
+        qty: int,
+        net_debit_limit: float,
+        *,
+        client_order_id: str | None = None,
+    ):
+        """Vertical debit spread: buy the lower strike, sell the higher.
+
+        Max loss is the net debit paid, which is why this is the right structure
+        when an outright call costs more than the per-trade risk budget allows.
+        """
+        from alpaca.trading.enums import OrderClass, PositionIntent
+        from alpaca.trading.requests import OptionLegRequest
+
+        req = LimitOrderRequest(
+            qty=qty,
+            side=OrderSide.BUY,
+            type="limit",
+            time_in_force=TimeInForce.DAY,
+            order_class=OrderClass.MLEG,
+            limit_price=round(net_debit_limit, 2),
+            client_order_id=client_order_id,
+            legs=[
+                OptionLegRequest(
+                    symbol=long_symbol, ratio_qty=1,
+                    side=OrderSide.BUY, position_intent=PositionIntent.BUY_TO_OPEN,
+                ),
+                OptionLegRequest(
+                    symbol=short_symbol, ratio_qty=1,
+                    side=OrderSide.SELL, position_intent=PositionIntent.SELL_TO_OPEN,
+                ),
+            ],
+        )
+        return self.trading.submit_order(req)

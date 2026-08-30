@@ -23,7 +23,16 @@ class Decision(BaseModel):
 
     action: Mode = Field(description="replicate, synthesize, or skip")
     contract_symbol: str | None = Field(
-        None, description="OCC symbol of the chosen contract, exactly as listed in the candidates"
+        None, description="OCC symbol of the long contract, exactly as listed in the candidates"
+    )
+    short_leg_symbol: str | None = Field(
+        None,
+        description=(
+            "Optional. To build a vertical debit spread, name a HIGHER-strike contract "
+            "with the SAME expiration from the candidate list to sell against the long "
+            "leg. Use this when an outright contract costs more than the stated budget. "
+            "Leave null for a plain long call."
+        ),
     )
     conviction: float = Field(
         0.0, ge=0.0, le=1.0,
@@ -47,6 +56,7 @@ class Plan(BaseModel):
     ticker: str
     mode: Mode
     contract_symbol: str
+    short_leg_symbol: str | None = None
     right: str
     strike: float
     expiration: dt.date
@@ -64,6 +74,14 @@ class Plan(BaseModel):
     disclosed_max: float
     underlying_at_txn: float | None = None
     underlying_now: float | None = None
+
+    @property
+    def is_spread(self) -> bool:
+        return self.short_leg_symbol is not None
+
+    @property
+    def structure(self) -> str:
+        return "debit spread" if self.is_spread else "long call"
 
     @property
     def move_since_txn(self) -> float | None:
