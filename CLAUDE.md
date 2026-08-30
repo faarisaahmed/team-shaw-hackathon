@@ -35,6 +35,9 @@ enforcement into a prompt, and do not give the review agent order-placing tools.
   — a rationale containing `[ST]` gets swallowed as markup otherwise.
 - Filings are immutable once posted, so `data/extracted/` and `data/ptr/` are
   cached indefinitely. Delete them to force re-extraction.
+- **Spread legs are validated before sizing**: same expiration, short strike
+  strictly higher, and the net must be a debit. The thinner leg governs the
+  open-interest cap.
 - The bulk index is **republished daily**; the ledger's `seen` table is what
   prevents re-trading a filing.
 

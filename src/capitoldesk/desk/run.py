@@ -111,10 +111,16 @@ class Desk:
                 continue
 
             try:
-                order = self.broker.buy_to_open(
-                    p.contract_symbol, p.contracts, p.limit_price,
-                    client_order_id=f"cd-{p.doc_id}-{p.contract_symbol}"[:48],
-                )
+                coid = f"cd-{p.doc_id}-{p.contract_symbol}"[:48]
+                if p.is_spread:
+                    order = self.broker.buy_debit_spread(
+                        p.contract_symbol, p.short_leg_symbol, p.contracts,
+                        p.limit_price, client_order_id=coid,
+                    )
+                else:
+                    order = self.broker.buy_to_open(
+                        p.contract_symbol, p.contracts, p.limit_price, client_order_id=coid,
+                    )
                 ledger.record_trade(p, str(order.id), "placed")
                 bp -= p.est_notional
                 results.append((p, f"placed {order.id}"))
@@ -176,8 +182,11 @@ class Desk:
             colour = "green" if status.startswith("placed") else (
                 "yellow" if status == "dry-run" else "red"
             )
+            symbol = (
+                f"{p.contract_symbol}\n / {p.short_leg_symbol}" if p.is_spread else p.contract_symbol
+            )
             t.add_row(
-                p.member.replace("Hon. ", ""), p.ticker, p.contract_symbol, str(p.contracts),
+                p.member.replace("Hon. ", ""), p.ticker, symbol, str(p.contracts),
                 f"${p.limit_price:,.2f}", f"${p.est_notional:,.0f}",
                 f"{p.conviction:.2f}", f"[{colour}]{status}[/]",
             )
@@ -188,7 +197,10 @@ class Desk:
             console.print(
                 Panel(
                     escape(p.rationale),
-                    title=f"{p.ticker} {p.mode.value} - {p.member} - underlying {move} since txn{flag}",
+                    title=(
+                        f"{p.ticker} {p.mode.value} ({p.structure}) - {p.member} "
+                        f"- underlying {move} since txn{flag}"
+                    ),
                     border_style="dim",
                 )
             )

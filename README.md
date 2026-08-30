@@ -124,6 +124,15 @@ management, or blind-trust churn. So sales don't open puts by default — but th
 *do* close any position the desk opened by mirroring that name, because the
 reason for the trade has expired.
 
+**Expensive underlyings get spreads, not skips.** When an outright call costs
+more than the per-trade budget — routine on high-priced names and deep-ITM
+LEAPS — the strategist can build a vertical debit spread instead: long the
+strike it wants, short a higher strike at the same expiry. Max loss is the net
+debit, so that is what gets sized against the risk cap. Every Bloom Energy trade
+was blocked as unaffordable before this existed; the same filing now expresses
+as long the $175 June-2027 call against a short $230, $2,071 of risk instead of
+$8,116.
+
 **Stock purchases want delta, not volatility.** When a filer buys shares they get
 delta 1.00 with no theta and no vega. Synthesizing that with an at-the-money call
 at 65% IV takes on decay and vol risk the filer never took. The strategist is
@@ -144,10 +153,6 @@ It can tell you a position is wrong; it cannot close it.
 - **Senate filings.** House only. The Senate EFD portal requires an interstitial
   terms-of-access acceptance and serves HTML rather than a bulk archive, so it
   needs a separate ingester.
-- **Multi-leg strategies.** The account is approved for level 3 (spreads), and
-  `place_option_order` supports multi-leg, but the strategist only picks single
-  long contracts today. Debit spreads would cut cost on expensive underlyings —
-  which is exactly what blocked every BE trade in testing.
 - **Backtesting.** There's no historical replay, so "does this actually make
   money" is unanswered. The 2026 index has 368 PTRs; replaying them against
   historical option chains is the obvious next step.
