@@ -87,6 +87,15 @@ class DeskLoop:
         self.state.cycles += 1
         is_open = self.market_open()
 
+        from ..execute import reconcile
+
+        try:
+            synced = reconcile.sync(self.desk.broker)
+            if synced:
+                console.print("[dim]order states: " + ", ".join(f"{k} {v}" for k, v in synced.items()) + "[/]")
+        except Exception as e:  # noqa: BLE001
+            log.warning("reconcile failed: %s", e)
+
         refs = self.desk.scan(max_age_days=self.days)
         if not refs:
             console.print(f"[dim]{dt.datetime.now():%H:%M:%S} no new filings[/]")

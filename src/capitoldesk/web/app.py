@@ -105,6 +105,12 @@ def _snapshot() -> dict:
     account, positions, err = None, [], None
     try:
         b = _broker()
+        try:
+            from ..execute import reconcile
+
+            reconcile.sync(b)
+        except Exception as e:  # noqa: BLE001
+            log.warning("reconcile failed: %s", e)
         a = b.account()
         account = {
             "number": a.account_number,

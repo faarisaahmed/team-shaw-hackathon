@@ -64,19 +64,33 @@ def positions(verbose: bool = typer.Option(False, "-v")):
 
 
 @app.command()
+def sync(verbose: bool = typer.Option(False, "-v")):
+    """Refresh journal order states from the broker."""
+    _log(verbose)
+    from .execute import reconcile
+
+    counts = reconcile.sync()
+    console.print(counts or "[dim]no open orders[/]")
+
+
+@app.command()
 def journal(limit: int = 25):
     """Show what the desk has done and what it passed over."""
     from .execute import ledger
 
     tr = ledger.recent_trades(limit)
     t = Table(title="Trades", header_style="bold")
-    for c in ("When", "Member", "Ticker", "Contract", "Qty", "Notional", "Conv", "Status"):
+    for c in ("When", "Member", "Ticker", "Contract", "Qty", "Notional", "Conv", "Status", "Filled"):
         t.add_column(c)
     for r in tr:
+        filled = (
+            f"{r['filled_qty']} @ ${r['filled_price']:,.2f}"
+            if r.get("filled_qty") and r.get("filled_price") else "—"
+        )
         t.add_row(
             (r["placed_at"] or "")[:16], (r["member"] or "").replace("Hon. ", ""),
             r["ticker"], r["contract_symbol"], str(r["contracts"]),
-            f"${r['notional']:,.0f}", f"{r['conviction']:.2f}", r["status"],
+            f"${r['notional']:,.0f}", f"{r['conviction']:.2f}", r["status"], filled,
         )
     console.print(t)
     rj = ledger.recent_rejections(limit)
@@ -85,6 +99,80 @@ def journal(limit: int = 25):
     for r in rj:
         t2.add_row(r["ticker"] or "-", escape(r["reason"] or ""))
     console.print(t2)
+
+
+@app.command()
+def backfill(
+    year: int = typer.Option(2025, help="Filing year to extract."),
+    limit: int = typer.Option(80, help="How many filings to extract."),
+    before: str = typer.Option(None, help="Only filings before this date (YYYY-MM-DD)."),
+    workers: int = typer.Option(8),
+    verbose: bool = typer.Option(False, "-v"),
+):
+    """Extract historical filings into the local cache, for research."""
+    _log(verbose)
+    import datetime as dt
+
+    from .extract.pipeline import extract_many
+    from .ingest.house import fetch_index
+
+    refs = fetch_index(year)
+    if before:
+        cutoff = dt.date.fromisoformat(before)
+        refs = [r for r in refs if r.filing_date < cutoff]
+    refs.sort(key=lambda r: r.filing_date)
+    refs = refs[:limit]
+    console.print(f"extracting {len(refs)} filings from {year}...")
+    out = extract_many(refs, workers=workers)
+    console.print(f"[green]extracted {len(out)} filings[/]")
+
+
+@app.command()
+def backtest(
+    horizon: int = typer.Option(21, help="Horizon (trading days) for the per-member table."),
+    verbose: bool = typer.Option(False, "-v"),
+):
+    """Event study: do disclosed purchases beat SPY after the filing goes public?"""
+    _log(verbose)
+    from .research.backtest import (
+        EventStudy, build_events, by_member, load_cached_disclosures, summarise,
+    )
+
+    discs = load_cached_disclosures()
+    events = build_events(discs)
+    console.print(f"[dim]{len(discs)} filings, {len(events)} disclosed purchases with tickers[/]")
+    outcomes = EventStudy().run(events)
+    s = summarise(outcomes)
+
+    t = Table(title="Excess return over SPY, from the filing date", header_style="bold")
+    for c in ("Horizon", "n", "Mean stock", "Mean SPY", "Mean excess", "Median excess", "Hit rate"):
+        t.add_column(c, justify="right" if c != "Horizon" else "left")
+    for r in s["horizons"]:
+        col = "green" if r["mean_excess"] > 0 else "red"
+        t.add_row(
+            f"{r['horizon']}d", str(r["n"]), f"{r['mean_stock']*100:.2f}%",
+            f"{r['mean_bench']*100:.2f}%",
+            f"[{col}]{r['mean_excess']*100:+.2f}%[/]",
+            f"{r['median_excess']*100:+.2f}%", f"{r['hit_rate']*100:.1f}%",
+        )
+    console.print(t)
+
+    rows = by_member(outcomes, horizon=horizon)
+    if rows:
+        t2 = Table(title=f"By member ({horizon}d, n>=3)", header_style="bold")
+        for c in ("Member", "n", "Mean excess", "Hit rate"):
+            t2.add_column(c, justify="right" if c != "Member" else "left")
+        for r in rows[:12]:
+            col = "green" if r["mean_excess"] > 0 else "red"
+            t2.add_row(
+                r["member"].replace("Hon. ", ""), str(r["n"]),
+                f"[{col}]{r['mean_excess']*100:+.2f}%[/]", f"{r['hit_rate']*100:.1f}%",
+            )
+        console.print(t2)
+    console.print(
+        "[dim]Entry is the FILING date, not the transaction date - the trade is "
+        "private until filed, so entering earlier would be lookahead bias.[/]"
+    )
 
 
 @app.command()
