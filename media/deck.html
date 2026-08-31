@@ -216,15 +216,11 @@
 <div class="s">
   <div class="eyebrow">Controls</div>
   <h2>Every limit is code, not a prompt</h2>
-  <div class="cols c2" style="margin-top:14px">
+  <div class="cols c2" style="margin-top:14px;grid-template-columns:1.06fr .94fr">
     <div>
-      <ul>
-        <li><b>$5,000</b> maximum per trade · <b>$25,000</b> per day</li>
-        <li><b>Never &gt;5%</b> of a contract's open interest; minimum OI 50</li>
-        <li><b>Spreads &gt;20% wide are skipped</b> — a thesis you can't exit is worth nothing</li>
-        <li><b>Marketable limit orders only.</b> Never a market order on an option</li>
-        <li><b>Paper-only guard:</b> the desk refuses to start against a live endpoint</li>
-      </ul>
+      <img src="assets/term/risklimits.png" style="width:100%">
+      <div class="sm" style="margin-top:14px">Marketable limit orders only — never a market order on an
+        option. And the desk refuses to start against a live endpoint.</div>
     </div>
     <div class="card">
       <h3>Caught in development</h3>
@@ -234,15 +230,42 @@
         that live statuses consume the caps and dead ones release them.</div>
       <div class="sm muted" style="margin-top:13px">45 tests cover the deterministic machinery — sizing under caps,
         spread validation, option-symbol parsing, the paper-only guard.</div>
-      <img src="assets/term/tests.png" style="width:100%;margin-top:14px">
     </div>
   </div>
+  <img src="assets/term/tests.png" style="width:100%;margin-top:18px">
   <div class="grow"></div>
   <div class="quote" style="font-size:22px">The model can argue for a trade. It cannot argue for a bigger one.</div>
   <div class="pg">08</div>
 </div>
 
-<!-- 9 RECEIPTS -->
+<!-- 9 WHAT BROKE -->
+<div class="s">
+  <div class="eyebrow">Two days of building</div>
+  <h2>What broke, and how we knew</h2>
+  <div class="cols c2" style="margin-top:6px;grid-template-columns:1fr 1fr">
+    <div>
+      <ul style="margin-top:2px">
+        <li><b>A one-sided quote halved every price.</b> The free feed returned
+          <span class="mono">ask=0</span>, so a midpoint read AMAT at $221 instead of $461. Caught because
+          the strategist <i>refused to trade</i> on incoherent option prices.</li>
+        <li><b>Extraction silently truncated.</b> A 274-transaction scan blew past the output cap and
+          surfaced only as a JSON parse error. Now streams, and fails loudly.</li>
+        <li><b>Reconciliation disabled the risk caps.</b> Broker statuses stopped matching
+          <span class="mono">'placed'</span>, so the daily cap silently stopped binding.</li>
+        <li><b>The dashboard showed an empty book.</b> In an OCC symbol, index −9 is the call/put letter —
+          so the position filter matched nothing. Found the morning the orders filled.</li>
+      </ul>
+    </div>
+    <div>
+      <img src="assets/term/gitlog.png" style="width:100%">
+    </div>
+  </div>
+  <div class="grow"></div>
+  <div class="sm">Every one of these was found by running the thing against real market data — not by reading the code.</div>
+  <div class="pg">09</div>
+</div>
+
+<!-- 10 RECEIPTS -->
 <div class="s">
   <div class="eyebrow">Receipts</div>
   <h2>Not a mockup</h2>
@@ -254,10 +277,10 @@
     <img src="assets/term/positions.png"
          style="width:100%;flex:1;min-height:0;object-fit:contain;object-position:left top">
   </div>
-  <div class="pg">09</div>
+  <div class="pg">10</div>
 </div>
 
-<!-- 9 LIVE -->
+<!-- 11 LIVE -->
 <div class="s" style="padding-bottom:0">
   <div class="eyebrow">Running now</div>
   <h2>Live, autonomous, and auditable</h2>
@@ -267,7 +290,7 @@
     <b style="color:var(--ink)">Alpaca's MCP server</b>.</div>
   <img src="assets/dash_hero.png" style="width:100%;flex:1;object-fit:cover;object-position:top;
        margin-top:24px;border-bottom:none;border-radius:12px 12px 0 0">
-  <div class="pg" style="bottom:22px">10</div>
+  <div class="pg" style="bottom:22px">11</div>
 </div>
 
 <!-- 10 CLOSE -->

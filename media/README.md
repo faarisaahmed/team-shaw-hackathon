@@ -2,13 +2,17 @@
 
 | File | What it is |
 |---|---|
-| `capitol-desk-deck.pdf` | 10-slide pitch deck, 16:9 |
+| `capitol-desk-deck.pdf` | 12-slide pitch deck, 16:9 |
+| `capitol-desk-deck.pptx` | Same deck as PPTX, for Google Slides import |
 | `video/capitol-desk.mp4` | 4m18s pitch video, 1080p, narrated (ElevenLabs) |
 | `video/script.txt` | Narration, one line per scene (`scene\|text`) |
 | `deck.html` | Source for the deck |
 | `video/gen_scenes.py` | Generates the nine 1920×1080 scene frames |
 | `video/build_video.py` | Assembles frames + narration into the MP4 |
 | `video/tts_elevenlabs.py` | Generates the narration track via ElevenLabs |
+| `build_pptx.py` | Renders the PDF into a PPTX |
+| `render_terms.py`, `render_extra.py` | Turn captured CLI output into deck cards |
+| `assets/term/*.txt` | The raw captured output those cards are built from |
 
 Everything on screen is real: the filings are actual PTRs pulled from the House
 Clerk, the dashboard is the live deployment, and every figure comes from the
@@ -40,6 +44,16 @@ Record the lines in `script.txt`, save as `audio/s1.wav` … `s9.wav`, and run
 `python build_video.py`. Scene durations, crossfade offsets and the audio
 timeline are all derived from the actual file lengths, so the video re-times
 itself around any recording — no manual syncing.
+
+## Rebuilding the PPTX
+
+```bash
+cd media && python build_pptx.py
+```
+
+Each slide is a full-bleed image. Google Slides re-flows native text boxes and
+would break the layout, so the deck is imported as artwork and `deck.html`
+stays the editable source.
 
 ## Regenerating the visuals
 
