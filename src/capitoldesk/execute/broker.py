@@ -78,8 +78,29 @@ class Broker:
     def positions(self):
         return self.trading.get_all_positions()
 
+    @staticmethod
+    def is_option_symbol(symbol: str) -> bool:
+        """OCC format: root + YYMMDD + C|P + 8-digit strike.
+
+        Note the call/put letter sits at index -9, so a naive
+        `symbol[-9:].isdigit()` is never true - it always includes that letter.
+        """
+        return len(symbol) >= 15 and symbol[-9] in "CP" and symbol[-8:].isdigit()
+
     def option_positions(self):
-        return [p for p in self.positions() if len(p.symbol) > 6 and p.symbol[-9:].isdigit()]
+        """Held option legs, long and short.
+
+        Prefers Alpaca's own asset_class and falls back to the symbol shape.
+        """
+        from alpaca.trading.enums import AssetClass
+
+        out = []
+        for p in self.positions():
+            if getattr(p, "asset_class", None) == AssetClass.US_OPTION:
+                out.append(p)
+            elif self.is_option_symbol(p.symbol):
+                out.append(p)
+        return out
 
     # ---------- market data ----------
 

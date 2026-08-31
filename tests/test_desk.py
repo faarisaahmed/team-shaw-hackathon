@@ -425,3 +425,28 @@ class TestLimitsSurviveReconciliation:
         L = self._seed(tmp_path, monkeypatch, status)
         assert L.notional_today() == 0.0, f"{status} must not consume the daily cap"
         assert L.open_trade_count() == 0
+
+
+class TestOptionSymbolDetection:
+    """Regression: the call/put letter sits at index -9 of an OCC symbol, so
+    `symbol[-9:].isdigit()` is never true. The old filter matched nothing, and
+    the dashboard reported an empty book while four legs were held."""
+
+    @pytest.mark.parametrize("sym", [
+        "INTC270617C00090000",   # 19 chars
+        "BE270617C00175000",     # 17 chars
+        "BE270617C00230000",
+        "SPY261218P00500000",    # put
+    ])
+    def test_real_option_symbols_detected(self, sym):
+        from capitoldesk.execute.broker import Broker
+
+        assert Broker.is_option_symbol(sym)
+        # The exact expression that used to be used, shown to be wrong.
+        assert not sym[-9:].isdigit()
+
+    @pytest.mark.parametrize("sym", ["AAPL", "BE", "SPY", "BRKB", ""])
+    def test_equity_symbols_rejected(self, sym):
+        from capitoldesk.execute.broker import Broker
+
+        assert not Broker.is_option_symbol(sym)
