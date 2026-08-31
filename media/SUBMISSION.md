@@ -87,7 +87,7 @@ selection.
 | Live demo | https://capitol-desk.onrender.com |
 | Repository | https://github.com/faarisaahmed/team-shaw-hackathon |
 | Video | `media/video/capitol-desk.mp4` (4m18s) |
-| Deck | `media/capitol-desk-deck.pdf` (10 slides) |
+| Deck | `media/capitol-desk-deck.pdf` (12 slides) · `capitol-desk-deck.pptx` |
 
 ## Note for judges
 

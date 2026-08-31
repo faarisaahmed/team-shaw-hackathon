@@ -1,0 +1,12 @@
+class RiskLimits:
+
+    max_notional_per_trade: float = 5_000.0
+    max_notional_per_day: float = 25_000.0
+    max_open_positions: int = 25
+    max_contracts_per_order: int = 20
+    max_pct_of_open_interest: float = 0.05   # don't be >5% of a contract's OI
+    min_open_interest: int = 50              # skip illiquid contracts
+    max_spread_pct: float = 0.20             # skip if bid/ask spread > 20% of mid
+    min_days_to_expiry: int = 21
+    max_days_to_expiry: int = 400
+    max_filing_age_days: int = 75
