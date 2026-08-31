@@ -5,11 +5,16 @@ All trading logic stays in the desk modules; nothing decides anything here.
 """
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import datetime as dt
 import logging
+import os
 import threading
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -19,7 +24,44 @@ from ..execute import ledger
 
 log = logging.getLogger(__name__)
 
-app = FastAPI(title="Capitol Desk")
+# The desk trades U.S. options, so every timestamp is shown in market time -
+# a server running UTC would otherwise report a New York close at 20:00.
+MARKET_TZ = ZoneInfo("America/New_York")
+
+# Render's free tier spins an instance down after ~15 minutes without inbound
+# traffic, and the next visitor waits ~50s for a cold start. A ping to our own
+# LOOPBACK address would not help: the spin-down is driven by requests arriving
+# through Render's router, so the request has to leave and come back via the
+# public hostname, which Render supplies as RENDER_EXTERNAL_URL.
+KEEPWARM_INTERVAL = 600
+
+
+async def _keep_warm() -> None:
+    url = os.environ.get("RENDER_EXTERNAL_URL")
+    if not url:
+        return
+    target = url.rstrip("/") + "/health"
+    async with httpx.AsyncClient(timeout=30) as client:
+        while True:
+            await asyncio.sleep(KEEPWARM_INTERVAL)
+            try:
+                await client.get(target)
+            except Exception as e:  # noqa: BLE001 - never let this kill the app
+                log.debug("keep-warm ping failed: %s", e)
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(_keep_warm())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
+app = FastAPI(title="Capitol Desk", lifespan=lifespan)
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 SEED = ROOT / "seed"
@@ -178,7 +220,7 @@ def _snapshot() -> dict:
             "error": _job["error"],
         },
         "broker_error": err,
-        "now": dt.datetime.now(),
+        "now": dt.datetime.now(MARKET_TZ),
     }
 
 
