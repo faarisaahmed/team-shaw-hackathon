@@ -8,6 +8,10 @@ Paste-ready text for the lablab submission form.
 
 **Capitol Desk**
 
+## Author
+
+Faaris Ahmed
+
 ## Tagline (one line)
 
 An autonomous options desk that reads congressional financial disclosures,
