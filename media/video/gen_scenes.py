@@ -47,6 +47,7 @@ SCENES = {
 1: """<div class="s" style="justify-content:center">
   <div class="eyebrow">Alpaca AI Trading Agents Hackathon</div>
   <h1>Capitol&nbsp;Desk</h1>
+  <div style="font-size:30px;color:var(--ink2);margin-top:22px">Faaris Ahmed</div>
   <div class="lede" style="margin-top:34px;font-size:34px;max-width:1500px">
     An autonomous options desk that reads congressional financial disclosures,
     decides whether the signal is still alive, and trades it.</div>
@@ -191,10 +192,12 @@ SCENES = {
     <div><div class="xs">Source</div><div class="sm mono">github.com/faarisaahmed/team-shaw-hackathon</div></div>
     <div><div class="xs">Built with</div><div class="sm">Claude Opus 5 · Alpaca MCP Server</div></div>
   </div>
+  <div class="rule" style="margin-top:34px"></div>
+  <div class="sm" style="color:var(--ink);font-size:28px">Faaris Ahmed</div>
 </div>""",
 }
 
-out = Path("frames")
+out = Path(__file__).resolve().parent / "frames"
 out.mkdir(exist_ok=True)
 for n, body in SCENES.items():
     Path(out / f"s{n}.html").write_text(
