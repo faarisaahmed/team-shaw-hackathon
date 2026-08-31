@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Capitol Desk</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --line:#2c2c2a; --border:rgba(255,255,255,.10);
+    --accent:#3987e5; --good:#0ca30c; --crit:#d03b3b; --warn:#fab219;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--plane);font-family:ui-sans-serif,-apple-system,"Helvetica Neue",Inter,sans-serif;
+       -webkit-font-smoothing:antialiased;color:var(--ink)}
+  .s{width:1280px;height:720px;padding:66px 78px;position:relative;overflow:hidden;
+     page-break-after:always;display:flex;flex-direction:column;background:var(--plane)}
+  .s:last-child{page-break-after:auto}
+  .eyebrow{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  h1{font-size:58px;font-weight:660;letter-spacing:-.028em;line-height:1.04}
+  h2{font-size:40px;font-weight:640;letter-spacing:-.022em;line-height:1.12;margin-bottom:14px}
+  .lede{font-size:21px;line-height:1.5;color:var(--ink2);max-width:900px}
+  .sm{font-size:17px;line-height:1.55;color:var(--ink2)}
+  .muted{color:var(--muted)}
+  .rule{height:1px;background:var(--line);margin:22px 0}
+  .grow{flex:1}
+  .foot{font-size:13px;color:var(--muted);display:flex;gap:12px;align-items:center}
+  .pg{position:absolute;right:78px;bottom:52px;font-size:13px;color:var(--muted);
+      font-variant-numeric:tabular-nums}
+  .accent{color:var(--accent)} .good{color:var(--good)} .crit{color:var(--crit)} .warn{color:var(--warn)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .cols{display:grid;gap:22px} .c2{grid-template-columns:1fr 1fr} .c3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px}
+  .card h3{font-size:15px;font-weight:620;letter-spacing:.03em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:11px}
+  .big{font-size:52px;font-weight:660;letter-spacing:-.03em;line-height:1}
+  .lbl{font-size:14px;color:var(--muted);margin-top:7px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th{font-size:13px;font-weight:560;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+     text-align:left;padding:0 14px 9px 0;border-bottom:1px solid var(--line)}
+  td{font-size:19px;padding:13px 14px 13px 0;border-bottom:1px solid var(--line)}
+  td.n,th.n{text-align:right}
+  .flow{display:flex;align-items:stretch;gap:9px;margin-top:8px}
+  .step{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px 14px}
+  .step .k{font-size:13px;font-weight:640;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+  .step .d{font-size:13.5px;line-height:1.45;color:var(--ink2)}
+  .tag{display:inline-block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;
+       padding:3px 8px;border-radius:5px;border:1px solid var(--border);color:var(--muted);margin-top:9px}
+  .tag.llm{color:var(--accent);border-color:rgba(57,135,229,.45)}
+  .tag.code{color:var(--good);border-color:rgba(12,163,12,.45)}
+  ul{list-style:none} li{font-size:18px;line-height:1.5;color:var(--ink2);padding-left:22px;
+     position:relative;margin-bottom:13px}
+  li::before{content:"";position:absolute;left:0;top:10px;width:7px;height:7px;border-radius:2px;background:var(--accent)}
+  li b{color:var(--ink);font-weight:620}
+  img{display:block;border-radius:10px;border:1px solid var(--border)}
+  .quote{font-size:26px;line-height:1.4;font-weight:560;letter-spacing:-.012em;color:var(--ink)}
+</style></head><body>
+
+<!-- 1 TITLE -->
+<div class="s" style="justify-content:center">
+  <div class="eyebrow">Alpaca AI Trading Agents Hackathon · 2026</div>
+  <h1>Capitol&nbsp;Desk</h1>
+  <div class="lede" style="margin-top:22px;font-size:24px">
+    An autonomous options desk that reads congressional financial disclosures,
+    decides whether the signal is still alive, and trades it — end to end, unattended.
+  </div>
+  <div class="rule" style="margin-top:38px"></div>
+  <div class="foot">
+    <span class="mono accent">capitol-desk.onrender.com</span><span class="muted">·</span>
+    <span>Claude Opus 5 · Alpaca MCP Server · Alpaca Trading API</span>
+  </div>
+</div>
+
+<!-- 2 PROBLEM -->
+<div class="s">
+  <div class="eyebrow">The premise</div>
+  <h2>Congress trades. The law says they must tell us.</h2>
+  <div class="lede">
+    The STOCK Act requires every member of Congress to publicly disclose any transaction
+    over $1,000 — within 45 days. Those filings are free, public, and almost unreadable.
+  </div>
+  <div class="cols c3" style="margin-top:44px">
+    <div class="card"><div class="big">368</div><div class="lbl">Periodic Transaction Reports filed in 2026</div></div>
+    <div class="card"><div class="big">31.5<span style="font-size:26px"> days</span></div><div class="lbl">Median lag from trade to disclosure</div></div>
+    <div class="card"><div class="big">12<span style="font-size:26px">%</span></div><div class="lbl">Filed as scanned paper — zero machine-readable text</div></div>
+  </div>
+  <div class="grow"></div>
+  <div class="sm muted">Public filings. Trading on them is not insider trading — it is the opposite:
+    acting on information the law requires be published.</div>
+  <div class="pg">02</div>
+</div>
+
+<!-- 3 WHY HARD -->
+<div class="s">
+  <div class="eyebrow">Why nobody does this well</div>
+  <h2>The data actively fights you</h2>
+  <div class="cols c2" style="margin-top:8px;grid-template-columns:1.05fr .95fr">
+    <div>
+      <ul style="margin-top:6px">
+        <li><b>Asset names wrap across lines</b>, the owner column is often blank, and headers extract as mangled spacing.</li>
+        <li><b>12% are scanned paper.</b> One 18-page filing holds <b>274 transactions</b> and extracts zero characters.</li>
+        <li><b>Paper filings print no tickers at all</b> — the form says "Provide full name not ticker symbol."</li>
+        <li><b>Blank forms contain a pre-printed example row.</b> A naive OCR-and-regex pipeline buys "Example Mega Corp."</li>
+      </ul>
+      <div class="card" style="margin-top:6px;padding:16px 20px">
+        <div class="sm"><b style="color:var(--ink)">Our answer:</b> Claude reads the text layer where one exists,
+        and reads the <b style="color:var(--ink)">page visually</b> where one doesn't. On that 274-row scan it
+        extracted every transaction — and correctly ignored the example row.</div>
+      </div>
+    </div>
+    <img src="assets/scanned_ptr.png" style="width:100%;height:430px;object-fit:cover;object-position:top">
+  </div>
+  <div class="pg">03</div>
+</div>
+
+<!-- 4 ARCHITECTURE -->
+<div class="s">
+  <div class="eyebrow">Architecture</div>
+  <h2>Six stages, and the model only touches two</h2>
+  <div class="flow" style="margin-top:26px">
+    <div class="step"><div class="k">Ingest</div><div class="d">House Clerk bulk archive → XML index → PTR PDFs, cached and incremental.</div><span class="tag code">code</span></div>
+    <div class="step"><div class="k">Extract</div><div class="d">Text layer where it exists; the page read visually where it doesn't.</div><span class="tag llm">Claude</span></div>
+    <div class="step"><div class="k">Resolve</div><div class="d">Name → ticker, then verified against Alpaca before it can trade.</div><span class="tag llm">Claude + code</span></div>
+    <div class="step"><div class="k">Decide</div><div class="d">Live chains, greeks and signal decay → one contract and a conviction.</div><span class="tag llm">Claude</span></div>
+    <div class="step"><div class="k">Size &amp; gate</div><div class="d">Conviction → contracts, bounded by hard caps. Pure arithmetic.</div><span class="tag code">code</span></div>
+    <div class="step"><div class="k">Execute</div><div class="d">Marketable limit orders and spreads via Alpaca; state reconciled back.</div><span class="tag code">code</span></div>
+  </div>
+  <div class="grow"></div>
+  <div class="rule"></div>
+  <div class="quote" style="margin-top:8px">Claude decides <span class="accent">what</span> to trade.
+    Code decides <span class="good">how much</span>.</div>
+  <div class="sm" style="margin-top:14px;max-width:960px">Position sizing and risk limits are plain arithmetic in
+    a config file and a gate function. There is no prompt a model can write that gets it a bigger position.</div>
+  <div style="height:14px"></div>
+  <div class="pg">04</div>
+</div>
+
+<!-- 5 WORKED EXAMPLE -->
+<div class="s">
+  <div class="eyebrow">Worked example · Filing 20035143</div>
+  <h2>A real filing, a real order</h2>
+  <div class="cols c2" style="margin-top:4px;grid-template-columns:.85fr 1.15fr">
+    <img src="assets/pelosi_ptr.png" style="width:100%;height:412px;object-fit:cover;object-position:top">
+    <div>
+      <div class="card" style="padding:18px 22px">
+        <h3>What the filing says</h3>
+        <div class="sm">Pelosi, filed 21 Aug. Bloom Energy calls, <b style="color:var(--ink)">$100 strike,
+          expiring 17 Jun 2027</b> — a deep in-the-money LEAP used as stock replacement.</div>
+      </div>
+      <div class="card" style="padding:18px 22px;margin-top:13px">
+        <h3>What the desk found</h3>
+        <div class="sm">BE had already run <b class="warn">+13.9%</b> since her trade date. The outright June-2027
+          contract now costs <b class="crit">$8,116</b> against a <b>$5,000</b> per-trade cap — and every affordable
+          strike was 100% time value at 88% implied vol: <b>volatility risk the filer never took</b>.</div>
+      </div>
+      <div class="card" style="padding:18px 22px;margin-top:13px;border-color:rgba(57,135,229,.35)">
+        <h3 style="color:var(--accent)">What it did</h3>
+        <div class="sm">Built a vertical debit spread — long the <span class="mono">175</span> call
+          (delta 0.75), short the <span class="mono">230</span>. Same expiry, same thesis,
+          <b class="good">$2,071 of risk instead of $8,116</b>. Conviction cut to 0.45 because the move had partly happened.</div>
+      </div>
+    </div>
+  </div>
+  <div class="pg">05</div>
+</div>
+
+<!-- 6 THE DECLINES -->
+<div class="s">
+  <div class="eyebrow">The part that matters</div>
+  <h2>It declines far more than it takes</h2>
+  <div class="cols c3" style="margin-top:26px">
+    <div class="card"><div class="big">650</div><div class="lbl">Transactions parsed</div></div>
+    <div class="card"><div class="big crit">635</div><div class="lbl">Passed over</div></div>
+    <div class="card"><div class="big good">3</div><div class="lbl">Trades placed</div></div>
+  </div>
+  <div class="card" style="margin-top:26px;padding:20px 24px">
+    <h3>Declined on the merits — verbatim</h3>
+    <div class="sm" style="margin-top:4px">
+      <b style="color:var(--ink)">PG</b> — "a $1k–$15k purchase inside a 401(k) subholding of a family trust: a routine
+      retirement-account allocation into a mega-cap consumer staple, not an informed, concentrated bet … there's no thesis to express."
+    </div>
+    <div class="sm" style="margin-top:13px">
+      <b style="color:var(--ink)">AMAT</b> — "the quote set is internally incoherent: every listed call is priced above the
+      maximum theoretical value of a call … there is no way to size or price an honest replication."
+      <span class="muted">(It had caught a bug in our own price feed.)</span>
+    </div>
+  </div>
+  <div class="grow"></div>
+  <div class="sm">Anyone can build a bot that copies Pelosi. The engineering is in the 635 it refused.</div>
+  <div class="pg">06</div>
+</div>
+
+<!-- 7 BACKTEST -->
+<div class="s">
+  <div class="eyebrow">We measured it</div>
+  <h2>Copying Congress indiscriminately does not work</h2>
+  <div class="lede" style="font-size:19px">Event study over 143 filings and 826 disclosed purchases. Entry is the
+    <b style="color:var(--ink)">filing</b> date, not the transaction date — a trade is private for up to 45 days, so
+    entering earlier is lookahead bias. Returns are excess over SPY across the identical window.</div>
+  <table style="margin-top:26px">
+    <thead><tr><th>Horizon</th><th class="n">Events</th><th class="n">Mean excess</th><th class="n">Median excess</th><th class="n">Hit rate</th></tr></thead>
+    <tbody>
+      <tr><td>5 trading days</td><td class="n">799</td><td class="n">+0.09%</td><td class="n crit">−0.40%</td><td class="n">45.2%</td></tr>
+      <tr><td>21 trading days</td><td class="n">669</td><td class="n">+0.74%</td><td class="n crit">−0.37%</td><td class="n">49.0%</td></tr>
+      <tr><td>63 trading days</td><td class="n">668</td><td class="n">+0.42%</td><td class="n">+0.08%</td><td class="n">50.1%</td></tr>
+    </tbody>
+  </table>
+  <div class="grow"></div>
+  <div class="sm" style="max-width:1000px">Hit rates are a coin flip and the median trade is flat to
+    negative. The positive means come from a handful of large winners, not a broad edge.
+    <b style="color:var(--ink)">That is the argument for the desk, not against it</b> — if the average disclosed purchase
+    is noise, the value has to come from selection.</div>
+  <div class="pg">07</div>
+</div>
+
+<!-- 8 RISK -->
+<div class="s">
+  <div class="eyebrow">Controls</div>
+  <h2>Every limit is code, not a prompt</h2>
+  <div class="cols c2" style="margin-top:14px">
+    <div>
+      <ul>
+        <li><b>$5,000</b> maximum per trade · <b>$25,000</b> per day</li>
+        <li><b>Never &gt;5%</b> of a contract's open interest; minimum OI 50</li>
+        <li><b>Spreads &gt;20% wide are skipped</b> — a thesis you can't exit is worth nothing</li>
+        <li><b>Marketable limit orders only.</b> Never a market order on an option</li>
+        <li><b>Paper-only guard:</b> the desk refuses to start against a live endpoint</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Caught in development</h3>
+      <div class="sm">Order reconciliation began writing real broker statuses while every limit query still filtered
+        on <span class="mono">'placed'</span>. The daily cap and position limit <b class="crit">silently stopped binding</b>.</div>
+      <div class="sm" style="margin-top:13px">Found, fixed, and pinned with parametrised regression tests asserting
+        that live statuses consume the caps and dead ones release them.</div>
+      <div class="sm muted" style="margin-top:13px">36 tests cover the deterministic machinery — sizing under caps,
+        spread validation, the paper-only guard.</div>
+    </div>
+  </div>
+  <div class="grow"></div>
+  <div class="quote" style="font-size:22px">The model can argue for a trade. It cannot argue for a bigger one.</div>
+  <div class="pg">08</div>
+</div>
+
+<!-- 9 LIVE -->
+<div class="s" style="padding-bottom:0">
+  <div class="eyebrow">Running now</div>
+  <h2>Live, autonomous, and auditable</h2>
+  <div class="sm" style="max-width:1010px">Positions and P&amp;L stream from a real Alpaca paper account.
+    <span class="mono accent">desk loop</span> runs unattended — scanning for filings, holding them when the market is
+    closed rather than pricing into a session it hasn't seen, and handing the book to a review agent over
+    <b style="color:var(--ink)">Alpaca's MCP server</b>.</div>
+  <img src="assets/dash_hero.png" style="width:100%;flex:1;object-fit:cover;object-position:top;
+       margin-top:24px;border-bottom:none;border-radius:12px 12px 0 0">
+  <div class="pg" style="bottom:22px">09</div>
+</div>
+
+<!-- 10 CLOSE -->
+<div class="s" style="justify-content:center">
+  <div class="eyebrow">Capitol Desk</div>
+  <h1 style="font-size:48px">The interesting agent isn't<br>the one that trades.</h1>
+  <h1 style="font-size:48px;color:var(--muted)">It's the one that declines.</h1>
+  <div class="rule" style="margin-top:40px"></div>
+  <div class="cols c3" style="margin-top:8px">
+    <div><div class="sm muted">Live demo</div><div class="sm mono accent">capitol-desk.onrender.com</div></div>
+    <div><div class="sm muted">Source</div><div class="sm mono">github.com/faarisaahmed/<br>team-shaw-hackathon</div></div>
+    <div><div class="sm muted">Built with</div><div class="sm">Claude Opus 5 · Claude Agent SDK<br>Alpaca MCP Server · Alpaca API</div></div>
+  </div>
+</div>
+
+</body></html>

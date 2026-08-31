@@ -1,0 +1,58 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'><style>
+:root{--plane:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--muted:#898781;
+      --line:#2c2c2a;--border:rgba(255,255,255,.10);--accent:#3987e5;--good:#0ca30c;
+      --crit:#d03b3b;--warn:#fab219}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1920px;height:1080px;background:var(--plane);color:var(--ink);overflow:hidden;
+     font-family:ui-sans-serif,-apple-system,"Helvetica Neue",Inter,sans-serif;-webkit-font-smoothing:antialiased}
+.s{width:1920px;height:1080px;padding:96px 116px;display:flex;flex-direction:column;position:relative}
+.eyebrow{font-size:20px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:22px}
+h1{font-size:88px;font-weight:660;letter-spacing:-.03em;line-height:1.03}
+h2{font-size:60px;font-weight:640;letter-spacing:-.024em;line-height:1.1;margin-bottom:20px}
+.lede{font-size:30px;line-height:1.48;color:var(--ink2);max-width:1340px}
+.sm{font-size:24px;line-height:1.55;color:var(--ink2)}
+.xs{font-size:20px;line-height:1.5;color:var(--muted)}
+.grow{flex:1}.rule{height:1px;background:var(--line);margin:30px 0}
+.accent{color:var(--accent)}.good{color:var(--good)}.crit{color:var(--crit)}.warn{color:var(--warn)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.cols{display:grid;gap:28px}.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 34px}
+.card h3{font-size:20px;font-weight:620;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.big{font-size:96px;font-weight:660;letter-spacing:-.035em;line-height:1}
+.lbl{font-size:21px;color:var(--muted);margin-top:12px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:19px;font-weight:560;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+   text-align:left;padding:0 20px 14px 0;border-bottom:1px solid var(--line)}
+td{font-size:30px;padding:20px 20px 20px 0;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right}
+.flow{display:flex;gap:13px;margin-top:14px}
+.step{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px}
+.step .k{font-size:19px;font-weight:640;letter-spacing:.05em;text-transform:uppercase;margin-bottom:11px}
+.step .d{font-size:18px;line-height:1.45;color:var(--ink2)}
+.tag{display:inline-block;font-size:16px;letter-spacing:.05em;text-transform:uppercase;padding:5px 11px;
+     border-radius:7px;border:1px solid var(--border);color:var(--muted);margin-top:14px}
+.tag.llm{color:var(--accent);border-color:rgba(57,135,229,.5)}
+.tag.code{color:var(--good);border-color:rgba(12,163,12,.5)}
+ul{list-style:none}li{font-size:26px;line-height:1.5;color:var(--ink2);padding-left:32px;position:relative;margin-bottom:20px}
+li::before{content:"";position:absolute;left:0;top:14px;width:10px;height:10px;border-radius:3px;background:var(--accent)}
+li b{color:var(--ink);font-weight:620}
+img{display:block;border-radius:14px;border:1px solid var(--border)}
+.quote{font-size:42px;line-height:1.32;font-weight:600;letter-spacing:-.018em;color:var(--ink)}
+</style></head><body><div class="s">
+  <div class="eyebrow">The part that matters</div>
+  <h2>It declines far more than it takes</h2>
+  <div class="cols c3" style="margin-top:34px">
+    <div class="card"><div class="big">650</div><div class="lbl">Transactions parsed</div></div>
+    <div class="card"><div class="big crit">635</div><div class="lbl">Passed over</div></div>
+    <div class="card"><div class="big good">3</div><div class="lbl">Trades placed</div></div>
+  </div>
+  <div class="card" style="margin-top:34px;padding:30px 34px">
+    <h3>Declined on the merits — verbatim</h3>
+    <div class="sm"><b style="color:var(--ink)">PG</b> — "a routine retirement-account allocation into a
+      mega-cap consumer staple, not an informed, concentrated bet … there's no thesis to express."</div>
+    <div class="sm" style="margin-top:20px"><b style="color:var(--ink)">AMAT</b> — "the quote set is internally
+      incoherent … no way to size or price an honest replication."
+      <span class="muted">It had caught a bug in our own price feed.</span></div>
+  </div>
+  <div class="grow"></div>
+</div></body></html>

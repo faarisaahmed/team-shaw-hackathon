@@ -7,3 +7,8 @@ __pycache__/
 
 # Cached filings, extractions, and the trade journal. All reproducible.
 data/
+
+# Video build intermediates (regenerate with media/video/build_video.py)
+media/video/frames/*.png
+media/video/audio/*.aiff
+media/video/audio/*.wav
