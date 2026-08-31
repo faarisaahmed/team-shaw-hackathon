@@ -118,7 +118,7 @@
   <div class="sub" id="status">
     {% if job.running %}<span class="running">● cycle running…</span>
     {% elif job.error %}<span class="neg">last cycle failed: {{ job.error }}</span>
-    {% else %}Mirrors public STOCK Act disclosures into options. Updated {{ now.strftime('%H:%M:%S') }}.{% endif %}
+    {% else %}Mirrors public STOCK Act disclosures into options. Updated {{ now.strftime('%H:%M:%S %Z') }}.{% endif %}
     {% if read_only %}
     <div style="margin-top:6px">Positions and account are live from Alpaca. Scanning is disabled here —
       clone the repo and run <span class="mono">desk run</span> to watch it read filings and trade.</div>
