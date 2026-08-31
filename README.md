@@ -96,6 +96,21 @@ seen, and periodically hands the book to the review agent.
 
 Nothing trades without `--live`.
 
+## Deploying the dashboard
+
+`render.yaml` is a Render blueprint. New → Blueprint → point it at this repo,
+and Render will prompt for the two Alpaca secrets.
+
+The hosted instance deliberately carries **no Anthropic key**. Without one the
+app runs read-only: account, positions and P&L are live from Alpaca, but
+`/scan` returns 403 and the trade buttons are replaced with a badge — so a
+public URL cannot spend tokens or place orders. `CAPITOL_DESK_READ_ONLY=true`
+forces the same mode explicitly.
+
+Hosted disks are ephemeral, so an empty `data/` is bootstrapped from `seed/`
+(journal + backtest results, ~140 KB) and the dashboard is populated on first
+load. Local runs keep their own `data/` and ignore the seed.
+
 ## Risk limits
 
 All in `RiskLimits` in `src/capitoldesk/config.py`:
