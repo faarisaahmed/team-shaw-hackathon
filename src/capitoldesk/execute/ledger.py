@@ -59,6 +59,13 @@ _MIGRATIONS = [
 ]
 
 
+# Statuses that mean the desk is committed to this trade and it must count
+# against the risk limits. Reconciliation writes real broker statuses, so
+# filtering on 'placed' alone silently zeroes out every cap.
+ACTIVE = ("placed", "accepted", "new", "partially_filled", "filled")
+_ACTIVE_SQL = "(" + ",".join("?" * len(ACTIVE)) + ")"
+
+
 def _conn() -> sqlite3.Connection:
     DATA.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(DB)
@@ -125,8 +132,9 @@ def record_rejection(doc_id: str, ticker: str | None, reason: str) -> None:
 def notional_today() -> float:
     with _conn() as c:
         row = c.execute(
-            "SELECT COALESCE(SUM(notional),0) n FROM trades WHERE placed_at LIKE ? AND status='placed'",
-            (f"{dt.date.today().isoformat()}%",),
+            "SELECT COALESCE(SUM(notional),0) n FROM trades "
+            f"WHERE placed_at LIKE ? AND status IN {_ACTIVE_SQL}",
+            (f"{dt.date.today().isoformat()}%", *ACTIVE),
         ).fetchone()
         return float(row["n"])
 
@@ -134,7 +142,9 @@ def notional_today() -> float:
 def open_trade_count() -> int:
     with _conn() as c:
         return int(
-            c.execute("SELECT COUNT(*) n FROM trades WHERE status='placed'").fetchone()["n"]
+            c.execute(
+                f"SELECT COUNT(*) n FROM trades WHERE status IN {_ACTIVE_SQL}", ACTIVE
+            ).fetchone()["n"]
         )
 
 
@@ -155,7 +165,8 @@ def recent_rejections(limit: int = 50) -> list[dict]:
 def open_trades_for_ticker(ticker: str) -> list[dict]:
     with _conn() as c:
         return [dict(r) for r in c.execute(
-            "SELECT * FROM trades WHERE ticker=? AND status='placed'", (ticker,)
+            f"SELECT * FROM trades WHERE ticker=? AND status IN {_ACTIVE_SQL}",
+            (ticker, *ACTIVE),
         )]
 
 
@@ -169,7 +180,8 @@ def stats() -> dict:
     with _conn() as c:
         seen = c.execute("SELECT COUNT(*) n, COALESCE(SUM(n_txns),0) t FROM seen").fetchone()
         placed = c.execute(
-            "SELECT COUNT(*) n, COALESCE(SUM(notional),0) v FROM trades WHERE status='placed'"
+            "SELECT COUNT(*) n, COALESCE(SUM(notional),0) v FROM trades "
+            f"WHERE status IN {_ACTIVE_SQL}", ACTIVE
         ).fetchone()
         rej = c.execute("SELECT COUNT(*) n FROM rejections").fetchone()
         members = c.execute("SELECT COUNT(DISTINCT member) n FROM seen").fetchone()

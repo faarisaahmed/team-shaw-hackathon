@@ -385,3 +385,43 @@ class TestEventStudy:
         assert not VALID_SYMBOL.match("")
         for good in ("SPY", "F", "GOOGL", "INTC"):
             assert VALID_SYMBOL.match(good)
+
+
+class TestLimitsSurviveReconciliation:
+    """Regression: reconciliation rewrites status, and every cap query filtered
+    on status='placed'. That silently zeroed the daily notional cap and the
+    position limit - the desk would have kept trading past both."""
+
+    def _seed(self, tmp_path, monkeypatch, status: str):
+        import capitoldesk.execute.ledger as L
+
+        monkeypatch.setattr(L, "DB", tmp_path / f"{status}.sqlite3")
+        monkeypatch.setattr(L, "DATA", tmp_path)
+
+        from capitoldesk.strategy.plan import Mode, Plan
+
+        plan = Plan(
+            doc_id="1", member="Hon. Jane Doe", ticker="X", mode=Mode.REPLICATE,
+            contract_symbol="X260101C00100000", right="call", strike=100.0,
+            expiration=dt.date(2026, 12, 18), contracts=2, limit_price=5.0,
+            est_notional=1000.0, conviction=0.5, rationale="t",
+            txn_date=dt.date(2026, 7, 1), filing_date=dt.date(2026, 8, 1),
+            disclosed_min=1001, disclosed_max=15000,
+        )
+        L.record_trade(plan, "o1", "placed")
+        L.update_order_state(1, status)
+        return L
+
+    @pytest.mark.parametrize("status", ["placed", "accepted", "filled", "partially_filled"])
+    def test_active_statuses_count_against_limits(self, tmp_path, monkeypatch, status):
+        L = self._seed(tmp_path, monkeypatch, status)
+        assert L.notional_today() == 1000.0, f"{status} must count against the daily cap"
+        assert L.open_trade_count() == 1
+        assert len(L.open_trades_for_ticker("X")) == 1
+        assert L.stats()["trades"] == 1
+
+    @pytest.mark.parametrize("status", ["canceled", "rejected", "expired"])
+    def test_dead_orders_do_not_count(self, tmp_path, monkeypatch, status):
+        L = self._seed(tmp_path, monkeypatch, status)
+        assert L.notional_today() == 0.0, f"{status} must not consume the daily cap"
+        assert L.open_trade_count() == 0
