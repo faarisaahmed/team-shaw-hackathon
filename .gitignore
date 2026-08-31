@@ -12,3 +12,4 @@ data/
 media/video/frames/*.png
 media/video/audio/*.aiff
 media/video/audio/*.wav
+media/video/audio/*.mp3

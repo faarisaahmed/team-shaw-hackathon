@@ -3,47 +3,43 @@
 | File | What it is |
 |---|---|
 | `capitol-desk-deck.pdf` | 10-slide pitch deck, 16:9 |
-| `video/capitol-desk.mp4` | 3m21s pitch video, 1080p, narrated |
+| `video/capitol-desk.mp4` | 4m18s pitch video, 1080p, narrated (ElevenLabs) |
 | `video/script.txt` | Narration, one line per scene (`scene\|text`) |
 | `deck.html` | Source for the deck |
 | `video/gen_scenes.py` | Generates the nine 1920×1080 scene frames |
 | `video/build_video.py` | Assembles frames + narration into the MP4 |
+| `video/tts_elevenlabs.py` | Generates the narration track via ElevenLabs |
 
 Everything on screen is real: the filings are actual PTRs pulled from the House
 Clerk, the dashboard is the live deployment, and every figure comes from the
 committed journal and event study.
 
-## Re-recording the narration in your own voice
+## Narration
 
-The video ships with macOS text-to-speech so it is complete and submittable, but
-**a human voice is noticeably better for a pitch.** Swapping it in is one command:
+Generated with ElevenLabs (voice: *Daniel — Steady Broadcaster*,
+`onwK4e9ZLuTAKqWW03F9`, model `eleven_multilingual_v2`).
 
-1. Record each scene separately using the lines in `video/script.txt`.
-2. Save them as `video/audio/s1.wav` … `s9.wav`, overwriting the existing files
-   (48 kHz WAV; any sample rate works, ffmpeg resamples).
-3. Rebuild:
-
-```bash
-cd media/video && python build_video.py
-```
-
-Scene durations, crossfade offsets and the audio timeline are all derived from
-the actual length of each file, so the video re-times itself around your
-recording. No manual syncing.
-
-## Regenerating the TTS narration
-
-Audio files are not committed (45 MB, and fully reproducible). To rebuild the
-stock narration from `script.txt`:
+`ELEVENLABS_API_KEY` is read from the repo's gitignored `.env` and never
+printed or logged. To regenerate:
 
 ```bash
 cd media/video
-while IFS='|' read -r n text; do
-  say -v Samantha -r 172 -o "audio/s${n}.aiff" "$text"
-  ffmpeg -y -loglevel error -i "audio/s${n}.aiff" -ar 48000 -ac 2 "audio/s${n}.wav"
-done < script.txt
+python tts_elevenlabs.py --list                    # voices and models (free)
+python tts_elevenlabs.py --voice onwK4e9ZLuTAKqWW03F9
+python tts_elevenlabs.py --voice <id> --only 5     # redo a single scene
 python build_video.py
 ```
+
+Full script is ~3,350 characters, so one pass is inexpensive.
+`--stability` (default 0.45) trades consistency for expressiveness; narration
+goes flat above ~0.6.
+
+### Using a human voice instead
+
+Record the lines in `script.txt`, save as `audio/s1.wav` … `s9.wav`, and run
+`python build_video.py`. Scene durations, crossfade offsets and the audio
+timeline are all derived from the actual file lengths, so the video re-times
+itself around any recording — no manual syncing.
 
 ## Regenerating the visuals
 
