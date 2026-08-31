@@ -63,7 +63,7 @@ class Quote:
 
 class Broker:
     def __init__(self) -> None:
-        SETTINGS.require()
+        SETTINGS.require(need_llm=False)
         self.trading = TradingClient(
             SETTINGS.alpaca_key, SETTINGS.alpaca_secret, paper=SETTINGS.paper
         )

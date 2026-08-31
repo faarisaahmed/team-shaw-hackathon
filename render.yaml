@@ -1,0 +1,25 @@
+# Render blueprint. Deploy: New > Blueprint > point at this repo.
+# The two Alpaca secrets are marked sync:false, so Render prompts for them
+# rather than reading them from the repo.
+services:
+  - type: web
+    name: capitol-desk
+    runtime: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn capitoldesk.web.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ALPACA_API_KEY_ID
+        sync: false
+      - key: ALPACA_SECRET_KEY
+        sync: false
+      - key: ALPACA_BASE_URL
+        value: https://paper-api.alpaca.markets
+      # No ANTHROPIC_API_KEY here on purpose: without it the app serves live
+      # Alpaca data but refuses to scan, so the public URL cannot spend tokens
+      # or place orders.
+      - key: CAPITOL_DESK_READ_ONLY
+        value: "true"

@@ -14,13 +14,35 @@ from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from ..config import SETTINGS
+from ..config import ROOT, SETTINGS
 from ..execute import ledger
 
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="Capitol Desk")
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+SEED = ROOT / "seed"
+
+
+def _bootstrap_from_seed() -> None:
+    """Populate an empty data dir from the committed seed.
+
+    Hosted instances start with an ephemeral disk, so without this a judge
+    opening the URL would see an empty dashboard. Local runs already have a
+    real data dir and are left untouched.
+    """
+    from ..config import DATA
+
+    DATA.mkdir(parents=True, exist_ok=True)
+    for name in ("desk.sqlite3", "backtest.json"):
+        src, dst = SEED / name, DATA / name
+        if src.exists() and not dst.exists():
+            dst.write_bytes(src.read_bytes())
+            log.info("seeded %s from %s", dst, src)
+
+
+_bootstrap_from_seed()
 
 # Single-flight guard: a cycle is expensive and must not overlap itself.
 _job = {"running": False, "started": None, "last": None, "error": None}
@@ -148,6 +170,7 @@ def _snapshot() -> dict:
         "rejections": ledger.recent_rejections(30),
         "filings": ledger.seen_filings(25),
         "paper": SETTINGS.paper,
+        "read_only": SETTINGS.read_only,
         "job": {
             "running": _job["running"],
             "started": _job["started"].isoformat() if _job["started"] else None,
@@ -173,6 +196,14 @@ def state():
 
 @app.post("/scan")
 def scan(background: BackgroundTasks, live: bool = False, days: int = 30):
+    if SETTINGS.read_only:
+        # The hosted demo carries broker credentials only. Scanning would spend
+        # tokens and place orders, so anyone with the URL must not be able to.
+        return JSONResponse(
+            {"status": "disabled",
+             "detail": "This instance is read-only. Run `desk run` locally to scan."},
+            status_code=403,
+        )
     if _job["running"]:
         return JSONResponse({"status": "already running"}, status_code=409)
     background.add_task(_run_cycle, live, days)
@@ -181,4 +212,4 @@ def scan(background: BackgroundTasks, live: bool = False, days: int = 30):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "paper": SETTINGS.paper}
+    return {"ok": True, "paper": SETTINGS.paper, "read_only": SETTINGS.read_only}

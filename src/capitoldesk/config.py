@@ -69,16 +69,29 @@ class Settings:
     def paper(self) -> bool:
         return "paper" in self.alpaca_base_url
 
-    def require(self) -> None:
-        missing = [
-            n
-            for n, v in [
-                ("ALPACA_API_KEY_ID", self.alpaca_key),
-                ("ALPACA_SECRET_KEY", self.alpaca_secret),
-                ("ANTHROPIC_API_KEY", self.anthropic_key),
-            ]
-            if not v
+    @property
+    def read_only(self) -> bool:
+        """Hosted-demo mode: serve live broker data, refuse to spend anything.
+
+        On by default whenever there is no Anthropic key, so a deployment that
+        only carries Alpaca credentials degrades into a safe read-only demo
+        instead of erroring on startup. Can be forced with CAPITOL_DESK_READ_ONLY.
+        """
+        forced = (_env("CAPITOL_DESK_READ_ONLY") or "").strip().lower()
+        if forced in ("1", "true", "yes"):
+            return True
+        if forced in ("0", "false", "no"):
+            return False
+        return not self.anthropic_key
+
+    def require(self, *, need_llm: bool = True) -> None:
+        checks = [
+            ("ALPACA_API_KEY_ID", self.alpaca_key),
+            ("ALPACA_SECRET_KEY", self.alpaca_secret),
         ]
+        if need_llm:
+            checks.append(("ANTHROPIC_API_KEY", self.anthropic_key))
+        missing = [n for n, v in checks if not v]
         if missing:
             raise SystemExit(f"Missing required environment variables: {', '.join(missing)}")
         if not self.paper:
