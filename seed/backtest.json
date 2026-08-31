@@ -1,0 +1,178 @@
+{
+  "generated_at": "2026-08-30T19:47:58",
+  "summary": {
+    "horizons": [
+      {
+        "horizon": 5,
+        "n": 799,
+        "mean_excess": 0.0009226054341721696,
+        "median_excess": -0.0039794317131713886,
+        "hit_rate": 0.4518147684605757,
+        "stdev": 0.05887600962329963,
+        "mean_stock": -0.005791481662038648,
+        "mean_bench": -0.006714087096210818
+      },
+      {
+        "horizon": 21,
+        "n": 669,
+        "mean_excess": 0.007418296140292399,
+        "median_excess": -0.003654449499335577,
+        "hit_rate": 0.49028400597907323,
+        "stdev": 0.11654244142249466,
+        "mean_stock": -0.06439955979013762,
+        "mean_bench": -0.07181785593043002
+      },
+      {
+        "horizon": 63,
+        "n": 668,
+        "mean_excess": 0.004205810848314405,
+        "median_excess": 0.0007936515784378595,
+        "hit_rate": 0.5014970059880239,
+        "stdev": 0.15198063006141993,
+        "mean_stock": 0.0014161850752007427,
+        "mean_bench": -0.0027896257731136616
+      }
+    ],
+    "events": 799
+  },
+  "members": [
+    {
+      "member": "Hon. Nancy Pelosi",
+      "n": 7,
+      "mean_excess": 0.19694602853306684,
+      "hit_rate": 0.2857142857142857
+    },
+    {
+      "member": "Hon. Mark Dr Green",
+      "n": 4,
+      "mean_excess": 0.11770162298346282,
+      "hit_rate": 1.0
+    },
+    {
+      "member": "Hon. Gilbert Cisneros",
+      "n": 42,
+      "mean_excess": 0.06665848616923087,
+      "hit_rate": 0.5952380952380952
+    },
+    {
+      "member": "Hon. Virginia Foxx",
+      "n": 9,
+      "mean_excess": 0.05836949559130707,
+      "hit_rate": 0.8888888888888888
+    },
+    {
+      "member": "Hon. Thomas H. Kean Jr",
+      "n": 7,
+      "mean_excess": 0.048944056994807195,
+      "hit_rate": 0.7142857142857143
+    },
+    {
+      "member": "Hon. Jared Moskowitz",
+      "n": 9,
+      "mean_excess": 0.041587639601394034,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "member": "Charles J. Fleischmann",
+      "n": 11,
+      "mean_excess": 0.032782646700816584,
+      "hit_rate": 0.5454545454545454
+    },
+    {
+      "member": "Hon. Lloyd Doggett",
+      "n": 6,
+      "mean_excess": 0.03168780479081723,
+      "hit_rate": 0.8333333333333334
+    },
+    {
+      "member": "Hon. Julie Johnson",
+      "n": 53,
+      "mean_excess": 0.03080048220407435,
+      "hit_rate": 0.6415094339622641
+    },
+    {
+      "member": "Hon. Josh Gottheimer",
+      "n": 69,
+      "mean_excess": 0.015369859430627686,
+      "hit_rate": 0.6086956521739131
+    },
+    {
+      "member": "Michael McCaul",
+      "n": 16,
+      "mean_excess": 0.013084914179086589,
+      "hit_rate": 0.5625
+    },
+    {
+      "member": "Keith Self",
+      "n": 3,
+      "mean_excess": 0.004804689882027979,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "member": "Hon. Rick Larsen",
+      "n": 4,
+      "mean_excess": 0.0032090241018621624,
+      "hit_rate": 0.75
+    },
+    {
+      "member": "Hon. Rob Bresnahan",
+      "n": 33,
+      "mean_excess": 0.0003922642861320145,
+      "hit_rate": 0.42424242424242425
+    },
+    {
+      "member": "Hon. William R. Keating",
+      "n": 7,
+      "mean_excess": -0.004081155428676343,
+      "hit_rate": 0.42857142857142855
+    },
+    {
+      "member": "Rohit Khanna",
+      "n": 202,
+      "mean_excess": -0.004688753875568783,
+      "hit_rate": 0.40594059405940597
+    },
+    {
+      "member": "Hon. James Comer",
+      "n": 29,
+      "mean_excess": -0.007226497808296811,
+      "hit_rate": 0.5172413793103449
+    },
+    {
+      "member": "Hon. Jefferson Shreve",
+      "n": 35,
+      "mean_excess": -0.009675706407362476,
+      "hit_rate": 0.45714285714285713
+    },
+    {
+      "member": "Hon. Tim Moore",
+      "n": 24,
+      "mean_excess": -0.013517511807440425,
+      "hit_rate": 0.4166666666666667
+    },
+    {
+      "member": "Hon. Greg Landsman",
+      "n": 5,
+      "mean_excess": -0.021490210204783013,
+      "hit_rate": 0.4
+    },
+    {
+      "member": "Hon. Marjorie Taylor Greene",
+      "n": 68,
+      "mean_excess": -0.024360750377795993,
+      "hit_rate": 0.38235294117647056
+    },
+    {
+      "member": "Hon. Byron Donalds",
+      "n": 7,
+      "mean_excess": -0.10347582486683783,
+      "hit_rate": 0.0
+    },
+    {
+      "member": "Hon. Guy Mr Reschenthaler",
+      "n": 3,
+      "mean_excess": -0.1150442276021408,
+      "hit_rate": 0.0
+    }
+  ]
+}

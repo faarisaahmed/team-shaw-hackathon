@@ -107,14 +107,22 @@
     {% if paper %}<span class="badge paper">Paper</span>{% endif %}
     {% if account %}<span class="sub mono">{{ account.number }}</span>{% endif %}
     <span class="spacer"></span>
-    <button id="scan">Scan filings</button>
-    <button id="scanlive" class="arm">Scan &amp; trade</button>
+    {% if read_only %}
+      <span class="badge" title="This instance serves live broker data but cannot spend tokens or place orders">Read-only demo</span>
+    {% else %}
+      <button id="scan">Scan filings</button>
+      <button id="scanlive" class="arm">Scan &amp; trade</button>
+    {% endif %}
     <button id="theme" title="Toggle theme">◐</button>
   </header>
   <div class="sub" id="status">
     {% if job.running %}<span class="running">● cycle running…</span>
     {% elif job.error %}<span class="neg">last cycle failed: {{ job.error }}</span>
     {% else %}Mirrors public STOCK Act disclosures into options. Updated {{ now.strftime('%H:%M:%S') }}.{% endif %}
+    {% if read_only %}
+    <div style="margin-top:6px">Positions and account are live from Alpaca. Scanning is disabled here —
+      clone the repo and run <span class="mono">desk run</span> to watch it read filings and trade.</div>
+    {% endif %}
   </div>
 
   {% if account %}
@@ -289,8 +297,11 @@
 
 <script>
   const $ = s => document.querySelector(s);
+  const READ_ONLY = {{ 'true' if read_only else 'false' }};
   async function kick(live) {
-    $('#scan').disabled = $('#scanlive').disabled = true;
+    const b1 = $('#scan'), b2 = $('#scanlive');
+    if (b1) b1.disabled = true;
+    if (b2) b2.disabled = true;
     $('#status').innerHTML = '<span class="running">● cycle running…</span>';
     try {
       const r = await fetch('/scan?live=' + live + '&days=30', { method: 'POST' });
@@ -298,10 +309,12 @@
     } catch (e) { $('#status').textContent = 'Failed to start: ' + e; }
     poll();
   }
-  $('#scan').onclick = () => kick(false);
-  $('#scanlive').onclick = () => {
-    if (confirm('Place real paper orders for anything that clears the risk gate?')) kick(true);
-  };
+  if (!READ_ONLY) {
+    $('#scan').onclick = () => kick(false);
+    $('#scanlive').onclick = () => {
+      if (confirm('Place real paper orders for anything that clears the risk gate?')) kick(true);
+    };
+  }
   $('#theme').onclick = () => {
     const el = document.documentElement;
     el.dataset.theme = el.dataset.theme === 'dark' ? 'light' : 'dark';
